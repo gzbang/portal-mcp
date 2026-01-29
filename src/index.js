@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -10,6 +11,7 @@ import { glob } from "glob";
 import { readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import http from "http";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -154,41 +156,125 @@ async function getSigInfo(sigName) {
     });
 
     const response = await fetch(`${url}?${params}`, {
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (response.ok) {
       try {
-        const data = await response.json();
+        const result = await response.json();
 
-        if (typeof data === "object" && data !== null) {
-          const infoLines = [`${sigName} SIG信息：`, ""];
+        // API 返回格式: {code, message, data}
+        if (result.code === 1 && result.data) {
+          const data = result.data;
 
-          for (const [key, value] of Object.entries(data)) {
-            if (value !== null) {
-              infoLines.push(`${key}: ${value}`);
+          // 格式化输出
+          const sections = [];
+
+          // 基本信息
+          sections.push(`
+╔════════════════════════════════════════════════════════════╗
+║  ${sigName} SIG 信息                                         ║
+╚════════════════════════════════════════════════════════════╝`);
+
+          if (data.name) {
+            sections.push(`\n【名称】${data.name}`);
+          }
+
+          if (data.description) {
+            sections.push(`\n【描述】${data.description}`);
+          }
+
+          if (data.mailing_list) {
+            sections.push(`\n【邮件列表】${data.mailing_list}`);
+          }
+
+          // Maintainers
+          if (data.maintainers && data.maintainers.length > 0) {
+            sections.push(`\n【Maintainers】(${data.maintainers.length} 人)`);
+            data.maintainers.forEach((m, i) => {
+              sections.push(`  ${i + 1}. ${m}`);
+            });
+          }
+
+          // Maintainer 详细信息
+          if (data.maintainer_info && data.maintainer_info.length > 0) {
+            sections.push(`\n【Maintainer 详细信息】`);
+            data.maintainer_info.forEach((info, i) => {
+              sections.push(`  ${i + 1}. ${info.name || info.user_login}`);
+              if (info.email) sections.push(`     邮箱: ${info.email}`);
+              if (info.user_homepage_url) sections.push(`     主页: ${info.user_homepage_url}`);
+            });
+          }
+
+          // Repositories
+          if (data.repositories && data.repositories.length > 0) {
+            sections.push(`\n【仓库】(${data.repositories.length} 个)`);
+            data.repositories.slice(0, 20).forEach((repo, i) => {
+              sections.push(`  ${i + 1}. ${repo}`);
+            });
+            if (data.repositories.length > 20) {
+              sections.push(`  ... 还有 ${data.repositories.length - 20} 个仓库`);
             }
           }
 
-          if (infoLines.length > 2) {
-            return infoLines.join("\n");
-          } else {
-            return `${sigName} SIG信息存在但为空。`;
+          // Committers 统计
+          if (data.committers && data.committers.length > 0) {
+            sections.push(`\n【Committers】共 ${data.committers.length} 人`);
           }
+
+          // Committer 详细信息（只显示前 10 个）
+          if (data.committer_info && data.committer_info.length > 0) {
+            sections.push(`\n【活跃 Committers】(显示前 10 位)`);
+            data.committer_info.slice(0, 10).forEach((info, i) => {
+              const name = info.name || info.user_login || info.gitee_id || info.atomgit_id;
+              sections.push(`  ${i + 1}. ${name}`);
+              if (info.email) sections.push(`     邮箱: ${info.email}`);
+              if (info.organization) sections.push(`     组织: ${info.organization}`);
+            });
+            if (data.committer_info.length > 10) {
+              sections.push(`  ... 还有 ${data.committer_info.length - 10} 位 committers`);
+            }
+          }
+
+          // Branches 信息
+          if (data.branches && data.branches.length > 0) {
+            sections.push(`\n【分支管理】(${data.branches.length} 个分支组)`);
+            data.branches.slice(0, 3).forEach((branch, i) => {
+              if (branch.repo_branch && branch.repo_branch.length > 0) {
+                sections.push(`  分支组 ${i + 1}: ${branch.repo_branch.length} 个仓库分支`);
+                if (branch.keeper && branch.keeper.length > 0) {
+                  const keepers = branch.keeper.map(k => k.gitee_id || k.atomgit_id).join(", ");
+                  sections.push(`    维护者: ${keepers}`);
+                }
+              }
+            });
+            if (data.branches.length > 3) {
+              sections.push(`  ... 还有 ${data.branches.length - 3} 个分支组`);
+            }
+          }
+
+          sections.push(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          sections.push(`数据来源: ${url}`);
+          sections.push(`查询时间: ${new Date().toLocaleString('zh-CN')}`);
+          sections.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
+          return sections.join("\n");
+        } else if (result.code !== 1) {
+          return `获取 ${sigName} SIG 信息失败：${result.message || '未知错误'}`;
         } else {
-          return `获取${sigName} SIG信息时，API返回的不是预期的JSON结构。`;
+          return `${sigName} SIG 信息为空或不存在。`;
         }
       } catch (e) {
-        return `获取${sigName} SIG信息时，API返回的不是有效的JSON格式。`;
+        return `解析 ${sigName} SIG 信息时出错：${e.message}`;
       }
     } else {
-      return `获取SIG信息时API返回错误状态码：${response.status}`;
+      return `获取 SIG 信息时 API 返回错误状态码：${response.status}`;
     }
   } catch (e) {
     if (e.name === "AbortError") {
-      return `网络请求超时：${e.message}`;
+      return `网络请求超时，请稍后重试。`;
     }
-    return `获取SIG信息时发生错误：${e.message}`;
+    return `获取 SIG 信息时发生错误：${e.message}`;
   }
 }
 
@@ -371,9 +457,51 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // 启动服务器
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("使用标准输入输出传输启动MCP服务器");
+  const PORT = process.env.PORT || 3000;
+
+  const httpServer = http.createServer(async (req, res) => {
+    // 添加 CORS 头
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    // 处理 OPTIONS 预检请求
+    if (req.method === "OPTIONS") {
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
+    if (req.url === "/sse" && req.method === "GET") {
+      console.error(`SSE客户端连接请求`);
+      const transport = new SSEServerTransport("/message", res);
+      await server.connect(transport);
+      console.error(`SSE客户端已连接`);
+    } else if (req.url === "/message" && req.method === "POST") {
+      // 处理客户端发送的消息
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+      req.on("end", () => {
+        console.error(`收到消息: ${body.substring(0, 100)}...`);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "ok" }));
+      });
+    } else if (req.url === "/health" && req.method === "GET") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "ok" }));
+    } else {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("Not Found");
+    }
+  });
+
+  httpServer.listen(PORT, () => {
+    console.error(`MCP服务器已启动，监听端口 ${PORT}`);
+    console.error(`SSE端点: http://localhost:${PORT}/sse`);
+    console.error(`健康检查: http://localhost:${PORT}/health`);
+  });
 }
 
 main().catch((error) => {
