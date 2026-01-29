@@ -1,0 +1,21 @@
+{
+  "name": "portal-mcp",
+  "version": "1.0.0",
+  "description": "openEuler MCP server",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "openeuler",
+    "server"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "glob": "^11.0.0"
+  }
+}
