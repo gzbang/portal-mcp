@@ -1,7 +1,7 @@
 {
-  "name": "portal-mcp",
+  "name": "openeuler-mcp-server",
   "version": "1.0.0",
-  "description": "openEuler MCP server",
+  "description": "openEuler MCP server - 提供 SIG 信息查询和文档检索功能",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
