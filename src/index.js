@@ -128,9 +128,20 @@ async function main() {
       const url = new URL(req.url, `http://${req.headers.host}`);
 
       if (url.pathname === "/sse" && req.method === "GET") {
-        console.error(`[${new Date().toISOString()}] 新的 SSE 连接`);
+        console.error(`[${new Date().toISOString()}] 新的 SSE 连接 from ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}`);
 
         try {
+          // 显式设置SSE响应头（在SSEServerTransport之前）
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache, no-transform',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no',
+          });
+
+          // 发送初始注释以保持连接
+          res.write(': connected\n\n');
+
           // 为每个连接创建新的服务器实例
           const server = createServer();
           const transport = new SSEServerTransport("/message", res);
@@ -142,11 +153,30 @@ async function main() {
           await server.connect(transport);
           console.error(`[${new Date().toISOString()}] SSE 连接已建立 (session: ${sessionId})`);
 
+          // 设置保活心跳（每30秒发送一次）
+          const keepAliveInterval = setInterval(() => {
+            if (!res.writableEnded) {
+              res.write(': keepalive\n\n');
+              console.error(`[${new Date().toISOString()}] 发送保活心跳 (session: ${sessionId})`);
+            } else {
+              clearInterval(keepAliveInterval);
+            }
+          }, 30000);
+
           // 监听连接关闭
           req.on("close", () => {
             console.error(`[${new Date().toISOString()}] SSE 连接关闭 (session: ${sessionId})`);
+            clearInterval(keepAliveInterval);
             transports.delete(sessionId);
           });
+
+          // 监听错误
+          req.on("error", (error) => {
+            console.error(`[${new Date().toISOString()}] SSE 连接错误 (session: ${sessionId}):`, error);
+            clearInterval(keepAliveInterval);
+            transports.delete(sessionId);
+          });
+
         } catch (error) {
           console.error(`[${new Date().toISOString()}] SSE 连接错误:`, error);
           if (!res.headersSent) {
@@ -197,10 +227,11 @@ async function main() {
     httpServer.listen(PORT, "0.0.0.0", () => {
       console.error(`\n========================================`);
       console.error(`openEuler MCP 服务器已启动 (SSE 模式)`);
-      console.error(`端口: ${PORT}`);
-      console.error(`SSE 端点: http://localhost:${PORT}/sse`);
-      console.error(`消息端点: http://localhost:${PORT}/message`);
-      console.error(`健康检查: http://localhost:${PORT}/health`);
+      console.error(`监听地址: 0.0.0.0:${PORT}`);
+      console.error(`SSE 端点: http://0.0.0.0:${PORT}/sse`);
+      console.error(`消息端点: http://0.0.0.0:${PORT}/message`);
+      console.error(`健康检查: http://0.0.0.0:${PORT}/health`);
+      console.error(`外部访问: http://<your-domain>:${PORT}/sse`);
       console.error(`========================================\n`);
     });
   } else {
