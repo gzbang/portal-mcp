@@ -131,17 +131,6 @@ async function main() {
         console.error(`[${new Date().toISOString()}] 新的 SSE 连接 from ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}`);
 
         try {
-          // 显式设置SSE响应头（在SSEServerTransport之前）
-          res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache, no-transform',
-            'Connection': 'keep-alive',
-            'X-Accel-Buffering': 'no',
-          });
-
-          // 发送初始注释以保持连接
-          res.write(': connected\n\n');
-
           // 为每个连接创建新的服务器实例
           const server = createServer();
           const transport = new SSEServerTransport("/message", res);
