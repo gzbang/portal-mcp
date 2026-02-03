@@ -1,4 +1,14 @@
-import { CommitteeData } from '../data/organization.js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// 获取当前文件的目录路径
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// 读取 JSON 数据
+const organizationDataPath = join(__dirname, '../data/organization.json');
+const CommitteeData = JSON.parse(readFileSync(organizationDataPath, 'utf-8'));
 
 // 查询 openEuler 组织架构信息
 export async function getOrganizationInfo(query) {

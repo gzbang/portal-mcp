@@ -230,15 +230,16 @@ npm install
 
 ## 功能
 
-提供 3 个工具函数，根据问题自动选择合适的工具函数。
+提供 4 个工具函数，根据问题自动选择合适的工具函数。
 
 ### 工具列表
 
-| 工具名称 | 函数名 | 功能描述 | 参数 | 使用场景 |
-|---------|--------|---------|------|---------|
-| SIG 信息查询 | `get_sig_info` | 查询 openEuler 特别兴趣小组（SIG）的详细信息 | `sig_name` (string, 必需) | 查询 SIG 维护者、仓库、贡献者等信息 |
-| 文档检索 | `get_openEuler_info` | 在 openEuler 官方文档中检索相关信息 | `query` (string, 必需) | 搜索技术特性、功能文档、使用指南 |
-| 组织信息查询 | `get_organization_info` | 查询 openEuler 社区组织架构和成员信息 | `query` (string, 必需) | 查询委员会、工作组、社区成员信息 |
+| 工具名称 | 函数名 | 功能描述 | 主要参数 | 使用场景 |
+|---------|--------|---------|---------|---------|
+| SIG 信息查询 | `get_sig_info` | 查询 openEuler SIG 的详细信息，支持智能查询 | `sig_name` (必需), `query_type` (可选) | 查询 SIG 维护者、仓库、贡献者；查询仓库/maintainer 所属的 SIG |
+| CVE 安全公告查询 | `get_cve_info` | 查询 openEuler CVE 安全公告信息 | `keyword` (必需), `page`, `page_size` | 查询安全漏洞、CVE 详情、软件包安全问题 |
+| 软件包下载信息查询 | `get_package_info` | 查询软件包下载信息、镜像站点、版本列表 | `query` (必需), `query_type` (可选) | 下载 ISO 镜像、查询镜像站点、查看可用版本 |
+| 组织信息查询 | `get_organization_info` | 查询 openEuler 社区组织架构和成员信息 | `query` (必需) | 查询委员会、工作组、社区成员信息 |
 
 ### 详细说明
 
@@ -277,7 +278,7 @@ npm install
 - "kernel 仓库属于哪些 SIG 组？"
 - "gzbang 这个 maintainer 参与了哪些 SIG？"
 
-#### 2. 文档检索 (`get_openEuler_info`)
+#### 2. CVE 安全公告查询 (`get_cve_info`)
 
 查询 openEuler CVE（Common Vulnerabilities and Exposures）安全公告信息。
 
@@ -341,8 +342,7 @@ npm install
 - "有哪些 openEuler 版本可用？"
 - "查找 aarch64 架构的 ISO"
 
-### 4. 组织信息查询 (`get_organization_info`)
-#### 3. 组织信息查询 (`get_organization_info`)
+#### 4. 组织信息查询 (`get_organization_info`)
 
 查询 openEuler 社区组织架构和成员信息。
 
