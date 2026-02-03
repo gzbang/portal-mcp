@@ -1,18 +1,43 @@
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+// 数据源 URL
+const ORGANIZATION_DATA_URL = "https://www.openeuler.openatom.cn/data/portal/organization.json";
 
-// 获取当前文件的目录路径
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// 缓存数据和过期时间（15分钟）
+let cachedData = null;
+let cacheExpiry = 0;
+const CACHE_DURATION = 15 * 60 * 1000; // 15分钟
 
-// 读取 JSON 数据
-const organizationDataPath = join(__dirname, '../data/organization.json');
-const CommitteeData = JSON.parse(readFileSync(organizationDataPath, 'utf-8'));
+// 获取组织架构数据
+async function fetchOrganizationData() {
+  const now = Date.now();
+
+  // 如果缓存有效，直接返回缓存数据
+  if (cachedData && now < cacheExpiry) {
+    return cachedData;
+  }
+
+  // 从远程获取数据
+  const response = await fetch(ORGANIZATION_DATA_URL, {
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`获取组织架构数据失败：HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // 更新缓存
+  cachedData = data;
+  cacheExpiry = now + CACHE_DURATION;
+
+  return data;
+}
 
 // 查询 openEuler 组织架构信息
 export async function getOrganizationInfo(query) {
-  const data = CommitteeData.zh; // 使用中文数据
+  try {
+    const CommitteeData = await fetchOrganizationData();
+    const data = CommitteeData.zh; // 使用中文数据
 
   // 如果查询"所有"或"全部"，返回所有委员会列表
   if (query === '所有' || query === '全部' || query.toLowerCase() === 'all') {
@@ -63,6 +88,12 @@ export async function getOrganizationInfo(query) {
   }
 
   return `未找到与 "${query}" 相关的信息。\n\n提示：\n- 可以查询委员会名称，如："技术委员会"、"品牌委员会"\n- 可以查询成员姓名，如："胡欣蔚"、"熊伟"\n- 可以输入"所有"查看全部委员会列表`;
+  } catch (e) {
+    if (e.name === "AbortError") {
+      return `网络请求超时，请稍后重试。`;
+    }
+    return `查询组织架构信息时发生错误：${e.message}`;
+  }
 }
 
 // 格式化委员会信息
