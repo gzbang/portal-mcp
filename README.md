@@ -3,30 +3,40 @@
 [![npm version](https://img.shields.io/npm/v/openeuler-portal-mcp.svg)](https://www.npmjs.com/package/openeuler-portal-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-openEuler Model Context Protocol (MCP) 服务器，为 AI 助手提供 openEuler 社区相关信息的查询能力。
+openEuler Model Context Protocol (MCP) Server，为 Claude 等 AI 工具提供 openEuler 官网相关信息的查询能力。
+
+## 环境要求
+
+本项目需要以下环境：
+
+- **Node.js**: >= 18.0.0（推荐使用 LTS 版本）
+  - 本项目使用 ES Modules，需要 Node.js 18 或更高版本
+  - 下载地址：https://nodejs.org/
+- **npm**: >= 9.0.0（随 Node.js 自动安装）
+
+**检查当前版本：**
+
+```bash
+node --version
+npm --version
+```
 
 ## 安装
 
-### 方式 1：使用 npx（推荐）
+### 方式 1：使用 npx
 
 npx 会在首次使用时自动从 npm 下载包并运行，无需手动执行安装命令。当 MCP 客户端启动时会自动执行。
-
-**优点：**
-- 无需手动执行安装命令
-- 配置即可使用
-- 自动使用最新版本
 
 **注意：** 首次启动时需要联网下载包，之后会使用缓存。
 
 ### 方式 2：全局安装
-
-提前手动安装到系统，启动更快。
 
 ```bash
 npm install -g openeuler-portal-mcp
 ```
 
 **优点：**
+
 - 启动速度更快（无需下载）
 - 可以固定版本
 - 离线也能使用
@@ -44,20 +54,15 @@ cd openEuler-portal-mcp
 npm install
 ```
 
-**优点：**
-- 可以修改源码
-- 适合贡献代码
-- 适合调试问题
-
 ## 配置
 
-### Claude Desktop
+### Claude Code (终端 CLI)
 
 编辑配置文件：
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- macOS/Linux: `~/.config/claude/config.json`
+- Windows: `%USERPROFILE%\.config\claude\config.json`
 
-**使用 npx（推荐）：**
+**使用 npx：**
 
 ```json
 {
@@ -99,7 +104,7 @@ npm install
 
 在 Cursor 的 MCP 配置中添加：
 
-**使用 npx（推荐）：**
+**使用 npx：**
 
 ```json
 {
@@ -141,7 +146,51 @@ npm install
 
 在 VS Code 设置中配置 MCP servers：
 
-**使用 npx（推荐）：**
+**使用 npx：**
+
+```json
+{
+  "mcpServers": {
+    "openeuler-portal": {
+      "command": "npx",
+      "args": ["-y", "openeuler-portal-mcp"]
+    }
+  }
+}
+```
+
+**使用全局安装：**
+
+```json
+{
+  "mcpServers": {
+    "openeuler-portal": {
+      "command": "openeuler-portal-mcp"
+    }
+  }
+}
+```
+
+**使用本地路径：**
+
+```json
+{
+  "mcpServers": {
+    "openeuler-portal": {
+      "command": "node",
+      "args": ["/path/to/openEuler-portal-mcp/src/index.js"]
+    }
+  }
+}
+```
+
+
+
+### Trae-CN
+
+在 trae 设置中配置 MCP servers：
+
+**使用 npx：**
 
 ```json
 {
@@ -181,9 +230,19 @@ npm install
 
 ## 功能
 
-本服务器提供 4 个工具，AI 助手会根据用户的问题自动选择合适的工具。
+提供 3 个工具函数，根据问题自动选择合适的工具函数。
 
-### 1. SIG 信息查询 (`get_sig_info`)
+### 工具列表
+
+| 工具名称 | 函数名 | 功能描述 | 参数 | 使用场景 |
+|---------|--------|---------|------|---------|
+| SIG 信息查询 | `get_sig_info` | 查询 openEuler 特别兴趣小组（SIG）的详细信息 | `sig_name` (string, 必需) | 查询 SIG 维护者、仓库、贡献者等信息 |
+| 文档检索 | `get_openEuler_info` | 在 openEuler 官方文档中检索相关信息 | `query` (string, 必需) | 搜索技术特性、功能文档、使用指南 |
+| 组织信息查询 | `get_organization_info` | 查询 openEuler 社区组织架构和成员信息 | `query` (string, 必需) | 查询委员会、工作组、社区成员信息 |
+
+### 详细说明
+
+#### 1. SIG 信息查询 (`get_sig_info`)
 
 查询 openEuler 特别兴趣小组（SIG）的详细信息，或查询仓库/maintainer 所属的 SIG 组。
 
@@ -218,7 +277,7 @@ npm install
 - "kernel 仓库属于哪些 SIG 组？"
 - "gzbang 这个 maintainer 参与了哪些 SIG？"
 
-### 2. CVE 安全公告查询 (`get_cve_info`)
+#### 2. 文档检索 (`get_openEuler_info`)
 
 查询 openEuler CVE（Common Vulnerabilities and Exposures）安全公告信息。
 
@@ -283,6 +342,7 @@ npm install
 - "查找 aarch64 架构的 ISO"
 
 ### 4. 组织信息查询 (`get_organization_info`)
+#### 3. 组织信息查询 (`get_organization_info`)
 
 查询 openEuler 社区组织架构和成员信息。
 
@@ -298,7 +358,7 @@ npm install
 - "openEuler 有哪些委员会？"
 - "技术委员会的成员有谁？"
 
-> 💡 **提示：** AI 助手会根据工具的描述自动选择合适的工具。详细了解工具选择机制，请查看 [TOOL_SELECTION.md](./TOOL_SELECTION.md)
+> 💡 **提示：** 会根据工具的描述自动选择合适的工具。详细了解工具选择机制，请查看 [TOOL_SELECTION.md](./TOOL_SELECTION.md)
 
 ## 高级用法
 
