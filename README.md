@@ -59,8 +59,8 @@ npm install
 ### Claude Code (终端 CLI)
 
 编辑配置文件：
-- macOS/Linux: `~/.config/claude/config.json`
-- Windows: `%USERPROFILE%\.config\claude\config.json`
+- macOS/Linux: `~/.claude.json`
+- Windows: `%USERPROFILE%\.claude.json`
 
 **使用 npx：**
 
@@ -238,7 +238,7 @@ npm install
 |---------|--------|---------|---------|---------|
 | SIG 信息查询 | `get_sig_info` | 查询 openEuler SIG 的详细信息，支持智能查询 | `sig_name` (必需), `query_type` (可选) | 查询 SIG 维护者、仓库、贡献者；查询仓库/maintainer 所属的 SIG |
 | CVE 安全公告查询 | `get_cve_info` | 查询 openEuler CVE 安全公告信息 | `keyword` (必需), `page`, `page_size` | 查询安全漏洞、CVE 详情、软件包安全问题 |
-| 软件包下载信息查询 | `get_package_info` | 查询软件包下载信息、镜像站点、版本列表 | `query` (必需), `query_type` (可选) | 下载 ISO 镜像、查询镜像站点、查看可用版本 |
+| 下载信息查询 | `get_download_info` | 查询下载信息、镜像站点、版本列表 | `query` (必需), `query_type` (可选) | 下载 ISO 镜像、查询镜像站点、查看可用版本 |
 | 组织信息查询 | `get_organization_info` | 查询 openEuler 社区组织架构和成员信息 | `query` (必需) | 查询委员会、工作组、社区成员信息 |
 
 ### 详细说明
@@ -306,9 +306,9 @@ npm install
 - "openssl 有哪些安全漏洞？"
 - "CVE-2024-1234 的详细信息"
 
-### 3. 软件包下载信息查询 (`get_package_info`)
+### 3. 下载信息查询 (`get_download_info`)
 
-查询 openEuler 软件包下载信息、镜像仓列表和版本信息。
+查询 openEuler 下载信息、镜像仓列表和版本信息。
 
 **何时使用：**
 - 用户想下载 openEuler ISO 镜像
@@ -317,7 +317,7 @@ npm install
 - 用户想了解有哪些可用版本
 
 **参数：**
-- `query` (string, 必需): 查询关键词，可以是版本号或软件包名
+- `query` (string, 必需): 查询关键词，可以是版本号或镜像
 - `query_type` (string, 可选): 查询类型，默认为 "auto"
   - `"auto"`: 自动查询，支持版本号和模糊搜索
   - `"mirrors"`: 查询镜像仓列表
@@ -330,7 +330,7 @@ npm install
 - 版本列表：显示所有可用的 openEuler 版本
 
 **返回信息：**
-- ISO 文件名、大小、下载路径
+- 下载文件名、大小、路径
 - SHA256 校验码
 - 支持的架构（aarch64、x86_64 等）
 - 镜像站点 URL、国家、带宽

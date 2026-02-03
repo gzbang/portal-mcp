@@ -1,4 +1,4 @@
-// 查询 openEuler 软件包下载信息
+// 查询 openEuler 下载信息
 
 // 查询镜像仓列表
 async function getMirrorList() {
@@ -31,8 +31,8 @@ async function getAllVersions() {
   throw new Error(`API 返回错误状态码：${response.status}`);
 }
 
-// 查询特定路径的软件包信息
-async function getPackageByPath(path) {
+// 查询特定路径的下载文件信息
+async function getFilesByPath(path) {
   const url = `https://www.openeuler.openatom.cn/api/mirrors/${path}`;
 
   const response = await fetch(url, {
@@ -54,8 +54,8 @@ async function getPackageByPath(path) {
   throw new Error(`API 返回错误状态码：${response.status}`);
 }
 
-// 模糊搜索软件包
-async function fuzzySearchPackage(keyword) {
+// 模糊搜索下载文件
+async function fuzzySearchFiles(keyword) {
   // 获取所有版本
   const versions = await getAllVersions();
   const results = [];
@@ -63,7 +63,7 @@ async function fuzzySearchPackage(keyword) {
   // 在每个版本中搜索
   for (const version of versions.slice(0, 5)) { // 限制搜索前5个版本，避免超时
     try {
-      const data = await getPackageByPath(version.Version);
+      const data = await getFilesByPath(version.Version);
       if (data && data.FileTree) {
         // 在文件树中搜索匹配的文件
         for (const scenario of data.FileTree) {
@@ -96,7 +96,7 @@ function formatSize(size) {
 }
 
 // 主查询函数
-export async function getPackageInfo(query, queryType = "auto") {
+export async function getDownloadInfo(query, queryType = "auto") {
   try {
     // 查询镜像仓列表
     if (queryType === "mirrors") {
@@ -172,15 +172,15 @@ export async function getPackageInfo(query, queryType = "auto") {
       }
     }
 
-    // 查询特定软件包或版本
+    // 查询特定版本的下载文件
     // 首先尝试直接查询
-    const directResult = await getPackageByPath(query);
+    const directResult = await getFilesByPath(query);
 
     if (directResult && directResult.FileTree) {
       const sections = [];
       sections.push(`
 ╔════════════════════════════════════════════════════════════╗
-║  ${query} 软件包信息                                        ║
+║  ${query} 下载信息                                          ║
 ╚════════════════════════════════════════════════════════════╝`);
 
       sections.push(`\n路径: ${directResult.FileInfo.Path}\n`);
@@ -208,7 +208,7 @@ export async function getPackageInfo(query, queryType = "auto") {
     }
 
     // 如果直接查询失败，尝试模糊搜索
-    const fuzzyResults = await fuzzySearchPackage(query);
+    const fuzzyResults = await fuzzySearchFiles(query);
 
     if (fuzzyResults.length > 0) {
       const sections = [];
@@ -241,25 +241,25 @@ export async function getPackageInfo(query, queryType = "auto") {
       return sections.join("\n");
     }
 
-    return `未找到与 "${query}" 相关的软件包信息。请尝试使用完整的版本号（如 openEuler-24.03-LTS）或使用 query_type="versions" 查看所有可用版本。`;
+    return `未找到与 "${query}" 相关的下载信息。请尝试使用完整的版本号（如 openEuler-24.03-LTS）或使用 query_type="versions" 查看所有可用版本。`;
 
   } catch (e) {
     if (e.name === "AbortError") {
       return `网络请求超时，请稍后重试。`;
     }
-    return `查询软件包信息时发生错误：${e.message}`;
+    return `查询下载信息时发生错误：${e.message}`;
   }
 }
 
 // 工具定义
 export const toolDefinition = {
-  name: "get_package_info",
-  description: `查询 openEuler 软件包下载信息、镜像仓列表和版本信息。
+  name: "get_download_info",
+  description: `查询 openEuler 下载信息、镜像仓列表和版本信息。
 
 **查询模式：**
 
 1. 自动查询（默认）：query_type = "auto" 或不指定
-   - 输入版本号（如 openEuler-24.03-LTS）查询该版本的所有软件包
+   - 输入版本号（如 openEuler-24.03-LTS）查询该版本的所有下载文件
    - 输入关键词进行模糊搜索，在多个版本中查找匹配的文件
    - 支持智能匹配，自动尝试直接查询和模糊搜索
 
@@ -274,7 +274,7 @@ export const toolDefinition = {
 
 **使用场景：**
 - 查询特定版本的 ISO 镜像下载信息
-- 查找某个软件包在哪些版本中可用
+- 查找某个文件在哪些版本中可用
 - 获取镜像站点列表，选择最快的下载源
 - 查看所有可用的 openEuler 版本
 
@@ -285,7 +285,7 @@ export const toolDefinition = {
 - 版本列表：query_type = "versions"
 
 **返回信息包括：**
-- 软件包文件名、大小、路径
+- 下载文件名、大小、路径
 - SHA256 校验码
 - 支持的架构（aarch64、x86_64 等）
 - 场景类型（ISO、虚拟机镜像等）
@@ -296,7 +296,7 @@ export const toolDefinition = {
     properties: {
       query: {
         type: "string",
-        description: "查询关键词。可以是版本号（如 'openEuler-24.03-LTS'）、软件包名称或关键词（如 'dvd'、'iso'）。当 query_type 为 'mirrors' 或 'versions' 时，此参数可以为空字符串。",
+        description: "查询关键词。可以是版本号（如 'openEuler-24.03-LTS'）、文件名称或关键词（如 'dvd'、'iso'）。当 query_type 为 'mirrors' 或 'versions' 时，此参数可以为空字符串。",
       },
       query_type: {
         type: "string",

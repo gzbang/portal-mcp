@@ -14,7 +14,7 @@ import { getSigInfo, toolDefinition as getSigInfoDef } from "./tools/getSigInfo.
 // import { getDocsInfo, toolDefinition as getDocsInfoDef } from "./tools/getDocsInfo.js"; // 暂未对外开放
 import { getOrganizationInfo, toolDefinition as getOrganizationInfoDef } from "./tools/getOrganizationInfo.js";
 import { getCveInfo, toolDefinition as getCveInfoDef } from "./tools/getCveInfo.js";
-import { getPackageInfo, toolDefinition as getPackageInfoDef } from "./tools/getPackageInfo.js";
+import { getDownloadInfo, toolDefinition as getDownloadInfoDef } from "./tools/getDownloadInfo.js";
 
 // 工具映射
 const tools = [
@@ -22,7 +22,7 @@ const tools = [
   // getDocsInfoDef, // 暂未对外开放
   getOrganizationInfoDef,
   getCveInfoDef,
-  getPackageInfoDef,
+  getDownloadInfoDef,
 ];
 
 const toolHandlers = {
@@ -30,7 +30,7 @@ const toolHandlers = {
   // get_docs_info: getDocsInfo, // 暂未对外开放
   get_organization_info: getOrganizationInfo,
   get_cve_info: getCveInfo,
-  get_package_info: getPackageInfo,
+  get_download_info: getDownloadInfo,
 };
 
 // 创建服务器实例的工厂函数
@@ -79,7 +79,7 @@ function createServer() {
         result = await handler(args.query || "");
       } else if (name === "get_cve_info") {
         result = await handler(args.keyword || "", args.page || 1, args.page_size || 20);
-      } else if (name === "get_package_info") {
+      } else if (name === "get_download_info") {
         result = await handler(args.query || "", args.query_type || "auto");
       }
 
