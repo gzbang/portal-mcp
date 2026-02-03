@@ -1,9 +1,12 @@
 {
-  "name": "openeuler-mcp-server",
-  "version": "1.0.0",
-  "description": "openEuler MCP server - 提供 SIG 信息查询和文档检索功能",
+  "name": "openeuler-portal-mcp",
+  "version": "0.0.1-rc.1",
+  "description": "openEuler Portal MCP server - 提供openEuler官网相关信息的查询功能",
   "main": "src/index.js",
   "type": "module",
+  "bin": {
+    "openeuler-portal-mcp": "src/index.js"
+  },
   "scripts": {
     "start": "node src/index.js",
     "start:sse": "node src/index.js --sse",
@@ -11,11 +14,19 @@
   },
   "keywords": [
     "mcp",
-    "openeuler",
+    "openEuler",
     "server"
   ],
-  "author": "",
+  "author": "sig-OpenDesign",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gzbang/openEuler-portal-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gzbang/openEuler-portal-mcp/issues"
+  },
+  "homepage": "https://github.com/gzbang/openEuler-portal-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "glob": "^11.0.0"
