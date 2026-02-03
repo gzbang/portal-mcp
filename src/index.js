@@ -11,20 +11,26 @@ import http from "http";
 
 // 导入工具函数
 import { getSigInfo, toolDefinition as getSigInfoDef } from "./tools/getSigInfo.js";
-import { getOpenEulerInfo, toolDefinition as getOpenEulerInfoDef } from "./tools/getOpenEulerInfo.js";
+// import { getDocsInfo, toolDefinition as getDocsInfoDef } from "./tools/getDocsInfo.js"; // 暂未对外开放
 import { getOrganizationInfo, toolDefinition as getOrganizationInfoDef } from "./tools/getOrganizationInfo.js";
+import { getCveInfo, toolDefinition as getCveInfoDef } from "./tools/getCveInfo.js";
+import { getPackageInfo, toolDefinition as getPackageInfoDef } from "./tools/getPackageInfo.js";
 
 // 工具映射
 const tools = [
   getSigInfoDef,
-  getOpenEulerInfoDef,
+  // getDocsInfoDef, // 暂未对外开放
   getOrganizationInfoDef,
+  getCveInfoDef,
+  getPackageInfoDef,
 ];
 
 const toolHandlers = {
   get_sig_info: getSigInfo,
-  get_openEuler_info: getOpenEulerInfo,
+  // get_docs_info: getDocsInfo, // 暂未对外开放
   get_organization_info: getOrganizationInfo,
+  get_cve_info: getCveInfo,
+  get_package_info: getPackageInfo,
 };
 
 // 创建服务器实例的工厂函数
@@ -68,11 +74,13 @@ function createServer() {
       // 调用对应的工具处理函数
       let result;
       if (name === "get_sig_info") {
-        result = await handler(args.sig_name || "");
-      } else if (name === "get_openEuler_info") {
-        result = await handler(args.query || "");
+        result = await handler(args.sig_name || "", args.query_type || "sig");
       } else if (name === "get_organization_info") {
         result = await handler(args.query || "");
+      } else if (name === "get_cve_info") {
+        result = await handler(args.keyword || "", args.page || 1, args.page_size || 20);
+      } else if (name === "get_package_info") {
+        result = await handler(args.query || "", args.query_type || "auto");
       }
 
       return {

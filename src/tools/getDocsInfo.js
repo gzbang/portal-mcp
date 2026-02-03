@@ -1,5 +1,5 @@
-// 获取 openEuler 相关信息的检索功能
-export async function getOpenEulerInfo(query) {
+// 获取 openEuler 文档信息的检索功能（暂未对外开放）
+export async function getDocsInfo(query) {
   try {
     const txtUrl = "https://openeuler.test.osinfra.cn/llms-full.txt";
     const response = await fetch(txtUrl, {

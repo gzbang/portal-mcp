@@ -181,19 +181,29 @@ npm install
 
 ## 功能
 
-本服务器提供 3 个工具，AI 助手会根据用户的问题自动选择合适的工具。
+本服务器提供 4 个工具，AI 助手会根据用户的问题自动选择合适的工具。
 
 ### 1. SIG 信息查询 (`get_sig_info`)
 
-查询 openEuler 特别兴趣小组（SIG）的详细信息。
+查询 openEuler 特别兴趣小组（SIG）的详细信息，或查询仓库/maintainer 所属的 SIG 组。
 
 **何时使用：**
 - 用户询问某个 SIG 的信息、维护者、仓库等
-- 用户提到具体的 SIG 名称（如 Kernel、ai、Cloud）
-- 用户想了解 "谁负责 XXX"
+- 用户提到具体的 SIG 名称（如 Kernel、ai、Compiler）
+- 用户想了解某个仓库属于哪些 SIG 组
+- 用户想查询某个 maintainer 参与了哪些 SIG 组
 
 **参数：**
-- `sig_name` (string, 必需): SIG 名称，例如 "Kernel", "ai", "Cloud"
+- `sig_name` (string, 必需): 查询关键词，可以是 SIG 名称、仓库名或 maintainer 的 Gitee ID
+- `query_type` (string, 可选): 查询类型，默认为 "sig"（智能查询）
+  - `"sig"`: 智能查询模式，自动按 SIG → 仓库 → maintainer 顺序尝试
+  - `"repos"`: 仅查询仓库所属的 SIG 组
+  - `"maintainer"`: 仅查询 maintainer 所属的 SIG 组
+
+**特性：**
+- 智能查询：自动识别输入类型，无需指定查询模式
+- 模糊搜索：支持不同大小写变体（如 ai → AI）
+- 多类型支持：可查询 SIG、仓库、maintainer
 
 **返回信息：**
 - SIG 基本信息（名称、描述、邮件列表）
@@ -205,32 +215,74 @@ npm install
 **示例问题：**
 - "Kernel SIG 的维护者是谁？"
 - "ai SIG 管理哪些仓库？"
-- "告诉我关于 Cloud SIG 的信息"
+- "kernel 仓库属于哪些 SIG 组？"
+- "gzbang 这个 maintainer 参与了哪些 SIG？"
 
-### 2. 文档检索 (`get_openEuler_info`)
+### 2. CVE 安全公告查询 (`get_cve_info`)
 
-在 openEuler 官方文档中检索相关信息。
+查询 openEuler CVE（Common Vulnerabilities and Exposures）安全公告信息。
 
 **何时使用：**
-- 用户搜索技术特性、功能、文档
-- 用户询问 "什么是"、"如何"、"有哪些"
-- 用户想了解技术概念或使用指南
+- 用户询问安全漏洞、CVE 信息
+- 用户想了解某个软件包的安全问题
+- 用户查询特定 CVE 编号的详情
 
 **参数：**
-- `query` (string, 必需): 检索关键词，支持多关键词（空格分隔）
+- `keyword` (string, 必需): 查询关键词，可以是 CVE 编号或软件包名
+- `page` (number, 可选): 页码，默认为 1
+- `page_size` (number, 可选): 每页显示记录数，默认 20，最大 1000
 
-**特性：**
-- 智能段落提取（自动识别完整段落）
-- 多关键词匹配（支持空格分隔）
-- 相关度排序（按匹配分数排序）
-- 返回所有匹配结果（不限数量）
+**返回信息：**
+- CVE ID（漏洞编号）
+- 摘要（漏洞描述）
+- CVSS 评分（漏洞严重程度）
+- 状态（如已修复、调查中等）
+- 发布时间和更新时间
+- 受影响的产品和软件包
+- 安全公告编号
 
 **示例问题：**
-- "搜索 openEuler 中关于 kernel 的信息"
-- "openEuler 有哪些容器相关的特性？"
-- "什么是 openEuler 的安全特性？"
+- "查询 kernel 相关的 CVE"
+- "openssl 有哪些安全漏洞？"
+- "CVE-2024-1234 的详细信息"
 
-### 3. 组织信息查询 (`get_organization_info`)
+### 3. 软件包下载信息查询 (`get_package_info`)
+
+查询 openEuler 软件包下载信息、镜像仓列表和版本信息。
+
+**何时使用：**
+- 用户想下载 openEuler ISO 镜像
+- 用户询问某个版本的下载地址
+- 用户想查找镜像站点
+- 用户想了解有哪些可用版本
+
+**参数：**
+- `query` (string, 必需): 查询关键词，可以是版本号或软件包名
+- `query_type` (string, 可选): 查询类型，默认为 "auto"
+  - `"auto"`: 自动查询，支持版本号和模糊搜索
+  - `"mirrors"`: 查询镜像仓列表
+  - `"versions"`: 查询所有可用版本
+
+**特性：**
+- 智能查询：自动识别版本号或关键词
+- 模糊搜索：在多个版本中查找匹配的文件
+- 镜像列表：显示全球镜像站点信息
+- 版本列表：显示所有可用的 openEuler 版本
+
+**返回信息：**
+- ISO 文件名、大小、下载路径
+- SHA256 校验码
+- 支持的架构（aarch64、x86_64 等）
+- 镜像站点 URL、国家、带宽
+- 版本号、LTS 状态、支持的架构
+
+**示例问题：**
+- "openEuler-24.03-LTS 的下载地址"
+- "查询 openEuler 镜像站点"
+- "有哪些 openEuler 版本可用？"
+- "查找 aarch64 架构的 ISO"
+
+### 4. 组织信息查询 (`get_organization_info`)
 
 查询 openEuler 社区组织架构和成员信息。
 
