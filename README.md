@@ -230,7 +230,7 @@ npm install
 
 ## 功能
 
-提供 4 个工具函数，根据问题自动选择合适的工具函数。
+提供 6 个工具函数，根据问题自动选择合适的工具函数。
 
 ### 工具列表
 
@@ -240,6 +240,8 @@ npm install
 | CVE 安全公告查询 | `get_cve_info` | 查询 openEuler CVE 安全公告信息 | `keyword` (必需), `page`, `page_size` | 查询安全漏洞、CVE 详情、软件包安全问题 |
 | 下载信息查询 | `get_download_info` | 查询下载信息、镜像站点、版本列表 | `query` (必需), `query_type` (可选) | 下载 ISO 镜像、查询镜像站点、查看可用版本 |
 | 组织信息查询 | `get_organization_info` | 查询 openEuler 社区组织架构和成员信息 | `query` (必需) | 查询委员会、工作组、社区成员信息 |
+| 软件包信息查询 | `get_package_info` | 查询发行版软件包信息、生命周期 | `query` (必需), `query_type` (可选) | 查询软件包列表、详情、发行版生命周期 |
+| 兼容性测试查询 | `get_compatibility_info` | 查询硬件兼容性测试信息 | `query_type` (必需), `architecture`, `os`, `keyword`, `card_type` | 查询整机/板卡兼容性测试、硬件认证信息 |
 
 ### 详细说明
 
@@ -358,6 +360,74 @@ npm install
 - "openEuler 有哪些委员会？"
 - "技术委员会的成员有谁？"
 
+#### 5. 软件包信息查询 (`get_package_info`)
+
+查询 openEuler 社区发行版软件包信息。
+
+**何时使用：**
+- 用户询问 openEuler 发行版的生命周期信息
+- 用户想搜索软件包列表
+- 用户查询特定软件包的详细信息
+- 用户想了解软件包的维护者和分类信息
+
+**参数：**
+- `query` (string, 必需): 查询关键词，可以是软件包名称或为空字符串
+- `query_type` (string, 可选): 查询类型，默认为 "auto"
+  - `"auto"`: 自动查询模式，智能判断返回列表或详情
+  - `"lifecycle"`: 查询发行版生命周期信息
+  - `"list"`: 搜索软件包列表
+  - `"detail"`: 查询软件包详细信息
+
+**特性：**
+- 智能查询：自动判断返回列表或详情
+- 多类型支持：支持 RPM、OEPKG、IMAGE 等不同类型的包
+- 详细信息：包括依赖关系、文件列表、许可证等
+
+**返回信息：**
+- 发行版：版本号、发布日期、EOL 日期、支持状态
+- 软件包列表：名称、版本、描述、分类、维护者、可用类型
+- 软件包详情：完整的包信息、依赖关系、文件列表、许可证等
+
+**示例问题：**
+- "openEuler 有哪些版本？"
+- "查询 kernel 相关的软件包"
+- "redis 软件包的详细信息"
+- "nginx 的依赖包有哪些？"
+
+#### 6. 兼容性测试查询 (`get_compatibility_info`)
+
+查询 openEuler 硬件兼容性测试信息。
+
+**何时使用：**
+- 用户询问硬件兼容性测试信息
+- 用户想了解某个硬件设备在 openEuler 上的认证状态
+- 用户查询整机或板卡的兼容性测试列表
+- 用户想搜索特定厂商或型号的兼容性信息
+
+**参数：**
+- `query_type` (string, 必需): 查询类型
+  - `"whole"`: 整机兼容性测试
+  - `"board"`: 板卡兼容性测试
+- `architecture` (string, 可选): 架构（如 x86_64、aarch64）
+- `os` (string, 可选): 操作系统版本（如 openEuler-22.03-LTS-SP4）
+- `keyword` (string, 可选): 关键词（厂商名、型号等）
+- `card_type` (string, 可选): 板卡类型（仅板卡查询时有效，如网卡、显卡、RAID卡等）
+
+**特性：**
+- 多条件查询：支持架构、操作系统、关键词等多条件组合
+- 板卡类型筛选：板卡查询支持按类型筛选
+- 固定返回前 10 条记录
+
+**返回信息：**
+- 整机测试：硬件厂商、型号、CPU、架构、操作系统版本、主板型号、内存、认证时间、产品链接
+- 板卡测试：板卡名称、芯片厂商、板卡型号、芯片型号、板卡类型、驱动信息、下载链接、认证时间
+
+**示例问题：**
+- "查询 x86_64 架构的整机兼容性测试"
+- "openEuler-24.03-LTS 支持哪些网卡？"
+- "华为服务器的兼容性测试信息"
+- "查询 RAID 卡的兼容性测试"
+
 > 💡 **提示：** 会根据工具的描述自动选择合适的工具。详细了解工具选择机制，请查看 [TOOL_SELECTION.md](./TOOL_SELECTION.md)
 
 ## 高级用法
@@ -417,8 +487,11 @@ openeuler-portal-mcp/
 │   ├── index.js                    # 主入口文件
 │   └── tools/                      # 工具函数目录
 │       ├── getSigInfo.js           # SIG 信息查询
-│       ├── getOpenEulerInfo.js     # 文档检索
-│       └── getOrganizationInfo.js  # 组织信息查询
+│       ├── getCveInfo.js           # CVE 安全公告查询
+│       ├── getDownloadInfo.js      # 下载信息查询
+│       ├── getOrganizationInfo.js  # 组织信息查询
+│       ├── getPackageInfo.js       # 软件包信息查询
+│       └── getCompatibilityInfo.js # 兼容性测试查询
 ├── docs/                           # 文档目录
 ├── package.json
 ├── Dockerfile

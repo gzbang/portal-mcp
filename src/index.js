@@ -15,6 +15,8 @@ import { getSigInfo, toolDefinition as getSigInfoDef } from "./tools/getSigInfo.
 import { getOrganizationInfo, toolDefinition as getOrganizationInfoDef } from "./tools/getOrganizationInfo.js";
 import { getCveInfo, toolDefinition as getCveInfoDef } from "./tools/getCveInfo.js";
 import { getDownloadInfo, toolDefinition as getDownloadInfoDef } from "./tools/getDownloadInfo.js";
+import { getPackageInfo, toolDefinition as getPackageInfoDef } from "./tools/getPackageInfo.js";
+import { getCompatibilityInfo, toolDefinition as getCompatibilityInfoDef } from "./tools/getCompatibilityInfo.js";
 
 // 工具映射
 const tools = [
@@ -23,6 +25,8 @@ const tools = [
   getOrganizationInfoDef,
   getCveInfoDef,
   getDownloadInfoDef,
+  getPackageInfoDef,
+  getCompatibilityInfoDef,
 ];
 
 const toolHandlers = {
@@ -31,6 +35,8 @@ const toolHandlers = {
   get_organization_info: getOrganizationInfo,
   get_cve_info: getCveInfo,
   get_download_info: getDownloadInfo,
+  get_package_info: getPackageInfo,
+  get_compatibility_info: getCompatibilityInfo,
 };
 
 // 创建服务器实例的工厂函数
@@ -81,6 +87,10 @@ function createServer() {
         result = await handler(args.keyword || "", args.page || 1, args.page_size || 20);
       } else if (name === "get_download_info") {
         result = await handler(args.query || "", args.query_type || "auto");
+      } else if (name === "get_package_info") {
+        result = await handler(args.query || "", args.query_type || "auto");
+      } else if (name === "get_compatibility_info") {
+        result = await handler(args.query_type || "whole", args.architecture || "", args.os || "", args.keyword || "", args.card_type || "");
       }
 
       return {
