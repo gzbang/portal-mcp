@@ -230,7 +230,7 @@ npm install
 
 ## 功能
 
-提供 6 个工具函数，根据问题自动选择合适的工具函数。
+提供 8 个工具函数，根据问题自动选择合适的工具函数。
 
 ### 工具列表
 
@@ -242,6 +242,8 @@ npm install
 | 组织信息查询 | `get_organization_info` | 查询 openEuler 社区组织架构和成员信息 | `query` (必需) | 查询委员会、工作组、社区成员信息 |
 | 软件包信息查询 | `get_package_info` | 查询发行版软件包信息、生命周期 | `query` (必需), `query_type` (可选) | 查询软件包列表、详情、发行版生命周期 |
 | 兼容性测试查询 | `get_compatibility_info` | 查询硬件兼容性测试信息 | `query_type` (必需), `architecture`, `os`, `keyword`, `card_type` | 查询整机/板卡兼容性测试、硬件认证信息 |
+| 文档版本查询 | `get_docs_version` | 获取 openEuler 文档版本信息 | 无 | 了解可用文档版本、获取文档仓库地址 |
+| 文档内容搜索 | `get_docs_search_content` | 搜索 openEuler 文档内容 | `keyword` (必需), `version` (必需), `lang` (可选) | 搜索技术特性、查找文档说明、了解项目工具、搜索术语解释 |
 
 ### 详细说明
 
@@ -428,6 +430,63 @@ npm install
 - "华为服务器的兼容性测试信息"
 - "查询 RAID 卡的兼容性测试"
 
+#### 7. 文档版本查询 (`get_docs_version`)
+
+获取 openEuler 文档版本信息。
+
+**何时使用：**
+- 用户想了解 openEuler 可用的文档版本
+- 用户需要获取文档版本的标签、版本号、终止支持状态和分支名
+- 用户想获取对应版本的文档仓库地址
+- 用户需要为文档访问和开发提供版本选择依据
+
+**参数：**
+无必填参数
+
+**返回信息：**
+- 标签 (label)：显示标签（如 20.03 LTS）
+- 版本号 (value)：对应的版本号（如 20.03_LTS）
+- 是否终止支持 (eom)：表示版本是否已终止支持
+- 分支名 (branch)：版本分支标识符（如 stable2-20.03_LTS）
+- Git 仓库地址：根据分支名生成的仓库地址
+  - stable- 开头的分支：使用 docs 仓库，格式为 https://atomgit.com/openeuler/docs/tree/{branchName}
+  - stable2- 开头的分支：使用 docs-centralized 仓库，格式为 https://atomgit.com/openeuler/docs-centralized/tree/{branchName}
+
+**示例问题：**
+- "openEuler 有哪些文档版本？"
+- "最新的 openEuler 文档版本是什么？"
+- "哪个文档版本还在支持中？"
+- "获取 openEuler-24.03-LTS 的文档仓库地址"
+
+#### 8. 文档内容搜索 (`get_docs_search_content`)
+
+搜索 openEuler 文档内容，返回与搜索词相关的文档内容。
+
+**何时使用：**
+- 用户想搜索 openEuler 的技术特性和功能
+- 用户需要查找特定技术的文档说明
+- 用户想了解 openEuler 的项目和工具
+- 用户需要搜索技术术语、概念解释
+- 用户想查找使用指南和最佳实践
+
+**参数：**
+- `keyword` (string, 必需)：搜索关键词。可以是单个词（如 'kernel'）或多个词（如 'kernel security'）。支持中英文。
+- `lang` (string, 可选)：语言，zh 或 en（默认 zh）
+- `version` (string, 必需)：版本号，可通过 get_docs_version 获取。当用户不指定版本时，建议传递最新版本
+
+**返回信息：**
+- 搜索结果列表
+- 每个结果的标题
+- 每个结果的内容摘要
+- 每个结果的版本号
+- 每个结果的文档链接
+
+**示例问题：**
+- "如何在 openEuler 中安装 Docker？"
+- "openEuler 的内核特性有哪些？"
+- "搜索 openEuler 的安全加固指南"
+- "查找 openEuler 的网络配置文档"
+
 > 💡 **提示：** 会根据工具的描述自动选择合适的工具。详细了解工具选择机制，请查看 [TOOL_SELECTION.md](./TOOL_SELECTION.md)
 
 ## 高级用法
@@ -491,7 +550,9 @@ openeuler-portal-mcp/
 │       ├── getDownloadInfo.js      # 下载信息查询
 │       ├── getOrganizationInfo.js  # 组织信息查询
 │       ├── getPackageInfo.js       # 软件包信息查询
-│       └── getCompatibilityInfo.js # 兼容性测试查询
+│       ├── getCompatibilityInfo.js # 兼容性测试查询
+│       ├── getDocsVersion.js       # 文档版本查询
+│       └── getDocsSearchContent.js # 文档内容搜索
 ├── docs/                           # 文档目录
 ├── package.json
 ├── Dockerfile
