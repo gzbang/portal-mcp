@@ -117,10 +117,15 @@ export async function getDownloadInfo(query, queryType = "auto") {
         enabledMirrors.forEach((mirror, i) => {
           sections.push(`\n【镜像 ${i + 1}】`);
           if (mirror.Name) sections.push(`  名称: ${mirror.Name}`);
-          if (mirror.HttpURL) sections.push(`  URL: ${mirror.HttpURL}`);
+          if (mirror.HttpURL) sections.push(`  HTTP URL: ${mirror.HttpURL}`);
+          if (mirror.RsyncURL) sections.push(`  Rsync URL: ${mirror.RsyncURL}`);
           if (mirror.Country) sections.push(`  国家: ${mirror.Country}`);
+          if (mirror.Location) sections.push(`  位置: ${mirror.Location}`);
           if (mirror.SponsorName) sections.push(`  赞助商: ${mirror.SponsorName}`);
+          if (mirror.SponsorURL) sections.push(`  赞助商链接: ${mirror.SponsorURL}`);
           if (mirror.NetworkBandwidth) sections.push(`  带宽: ${mirror.NetworkBandwidth} Mbps`);
+          if (mirror.Enabled) sections.push(`  启用状态: ${mirror.Enabled ? '已启用' : '未启用'}`);
+          if (mirror.Note) sections.push(`  备注: ${mirror.Note}`);
           if (mirror.LastSync && mirror.LastSync !== "0001-01-01T00:00:00Z") {
             sections.push(`  最后同步: ${mirror.LastSync}`);
           }
@@ -160,6 +165,10 @@ export async function getDownloadInfo(query, queryType = "auto") {
           if (version.Scenario && version.Scenario.length > 0) {
             sections.push(`  场景: ${version.Scenario.join(', ')}`);
           }
+          if (version.ReleaseDate) sections.push(`  发布日期: ${version.ReleaseDate}`);
+          if (version.EOLDate) sections.push(`  EOL 日期: ${version.EOLDate}`);
+          if (version.Status) sections.push(`  状态: ${version.Status}`);
+          if (version.Description) sections.push(`  描述: ${version.Description}`);
         });
 
         sections.push(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
@@ -195,7 +204,11 @@ export async function getDownloadInfo(query, queryType = "auto") {
             sections.push(`  ${j + 1}. ${file.Name}`);
             if (file.Size) sections.push(`     大小: ${file.Size}`);
             if (file.Path) sections.push(`     路径: ${file.Path}`);
-            if (file.ShaCode) sections.push(`     SHA256: ${file.ShaCode.substring(0, 16)}...`);
+            if (file.ShaCode) sections.push(`     SHA256: ${file.ShaCode}`);
+            if (file.Md5Code) sections.push(`     MD5: ${file.Md5Code}`);
+            if (file.ReleaseDate) sections.push(`     发布日期: ${file.ReleaseDate}`);
+            if (file.Description) sections.push(`     描述: ${file.Description}`);
+            if (file.DownloadUrl) sections.push(`     下载链接: ${file.DownloadUrl}`);
           });
         }
       });
@@ -227,6 +240,9 @@ export async function getDownloadInfo(query, queryType = "auto") {
         sections.push(`  文件名: ${result.file.Name}`);
         if (result.file.Size) sections.push(`  大小: ${result.file.Size}`);
         if (result.file.Path) sections.push(`  路径: ${result.file.Path}`);
+        if (result.file.ShaCode) sections.push(`  SHA256: ${result.file.ShaCode}`);
+        if (result.file.Md5Code) sections.push(`  MD5: ${result.file.Md5Code}`);
+        if (result.file.DownloadUrl) sections.push(`  下载链接: ${result.file.DownloadUrl}`);
       });
 
       if (fuzzyResults.length > 20) {

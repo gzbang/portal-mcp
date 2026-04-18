@@ -1,8 +1,3 @@
-/**
- * @created 2026-03-03 by sig-OpenDesign with Claude AI
- * @description getSigInfo 工具函数单元测试（贡献查询 + 模糊匹配新功能）
- */
-
 // 测试统计
 let passed = 0;
 let failed = 0;

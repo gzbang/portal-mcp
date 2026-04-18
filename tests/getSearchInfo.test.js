@@ -1,8 +1,3 @@
-/**
- * @created 2026-03-03 by sig-OpenDesign with Claude AI
- * @description getSearchInfo 工具函数单元测试
- */
-
 // 测试统计
 let passed = 0;
 let failed = 0;

@@ -1,3 +1,5 @@
+import { addField, addFields, addIndentedField, addIndentedFields } from "../utils/formatHelpers.js";
+
 // 数据源 URL
 const WHOLE_MACHINE_URL = "https://www.openeuler.openatom.cn/api-cve/cve-security-notice-server/hardwarecomp/findAll";
 const WHOLE_MACHINE_DETAIL_URL = "https://www.openeuler.openatom.cn/api-cve/cve-security-notice-server/hardwarecomp/getOne";
@@ -8,7 +10,7 @@ let cachedWholeData = null;
 let wholeDataExpiry = 0;
 let cachedBoardData = null;
 let boardDataExpiry = 0;
-const CACHE_DURATION = 15 * 60 * 1000; // 15分钟
+const CACHE_DURATION = 15 * 60 * 1000;
 
 // 查询整机测试列表
 async function fetchWholeCompatibility(architecture = "", os = "", keyword = "", page = 1, size = 10) {
@@ -175,12 +177,7 @@ function formatWholeCompatibility(data, architecture, os, keyword) {
 
   let output = "=== openEuler 整机兼容性测试列表 ===\n\n";
 
-  // 显示查询条件
-  const conditions = [];
-  if (architecture) conditions.push(`架构: ${architecture}`);
-  if (os) conditions.push(`操作系统: ${os}`);
-  if (keyword) conditions.push(`关键词: ${keyword}`);
-
+  const conditions = [architecture && `架构: ${architecture}`, os && `操作系统: ${os}`, keyword && `关键词: ${keyword}`].filter(Boolean);
   if (conditions.length > 0) {
     output += `查询条件: ${conditions.join(', ')}\n`;
   }
@@ -192,41 +189,20 @@ function formatWholeCompatibility(data, architecture, os, keyword) {
     return output;
   }
 
+  const itemFields = [
+    { field: 'cpu', label: 'CPU' },
+    { field: 'architecture', label: '架构' },
+    { field: 'osVersion', label: '系统版本' },
+    { field: 'mainboardModel', label: '主板型号' },
+    { field: 'ram', label: '内存' },
+    { field: 'certificationTime', label: '认证时间' },
+    { field: 'certificationAddr', label: '认证地址' },
+    { field: 'friendlyLink', label: '产品链接' },
+  ];
+
   list.forEach((item, index) => {
     output += `${index + 1}. ${item.hardwareFactory || '未知厂商'} - ${item.hardwareModel || '未知型号'}\n`;
-
-    if (item.cpu) {
-      output += `   CPU: ${item.cpu}\n`;
-    }
-
-    if (item.architecture) {
-      output += `   架构: ${item.architecture}\n`;
-    }
-
-    if (item.osVersion) {
-      output += `   系统版本: ${item.osVersion}\n`;
-    }
-
-    if (item.mainboardModel) {
-      output += `   主板型号: ${item.mainboardModel}\n`;
-    }
-
-    if (item.ram) {
-      output += `   内存: ${item.ram}\n`;
-    }
-
-    if (item.certificationTime) {
-      output += `   认证时间: ${item.certificationTime}\n`;
-    }
-
-    if (item.certificationAddr) {
-      output += `   认证地址: ${item.certificationAddr}\n`;
-    }
-
-    if (item.friendlyLink) {
-      output += `   产品链接: ${item.friendlyLink}\n`;
-    }
-
+    output = addIndentedFields(output, item, itemFields, 3);
     output += '\n';
   });
 
@@ -247,73 +223,52 @@ function formatWholeDetail(data, basicInfo) {
 
   let output = "=== 整机兼容性详细信息 ===\n\n";
 
-  // 基本信息
   output += "【基本信息】\n";
   output += `硬件厂商: ${detail.hardwareFactory || '未知'}\n`;
   output += `硬件型号: ${detail.hardwareModel || '未知'}\n`;
   output += `CPU: ${detail.cpu || '未知'}\n`;
   output += `架构: ${detail.architecture || '未知'}\n`;
   output += `系统版本: ${detail.osVersion || '未知'}\n`;
-  output += `认证时间: ${detail.certificationTime || '未知'}\n`;
-  output += '\n';
+  output += `认证时间: ${detail.certificationTime || '未知'}\n\n`;
 
-  // 硬件配置
   output += "【硬件配置】\n";
-  if (detail.mainboardModel) {
-    output += `主板型号: ${detail.mainboardModel}\n`;
-  }
-  if (detail.ram) {
-    output += `内存: ${detail.ram}\n`;
-  }
-  if (detail.hardDiskDrive) {
-    output += `硬盘: ${detail.hardDiskDrive}\n`;
-  }
-  if (detail.videoAdapter) {
-    output += `显卡: ${detail.videoAdapter}\n`;
-  }
-  if (detail.hostBusAdapter) {
-    output += `主机总线适配器: ${detail.hostBusAdapter}\n`;
-  }
-  if (detail.biosUefi) {
-    output += `BIOS/UEFI: ${detail.biosUefi}\n`;
-  }
-  if (detail.portsBusTypes) {
-    output += `端口/总线类型: ${detail.portsBusTypes}\n`;
-  }
+  output = addFields(output, detail, [
+    { field: 'mainboardModel', label: '主板型号' },
+    { field: 'ram', label: '内存' },
+    { field: 'hardDiskDrive', label: '硬盘' },
+    { field: 'videoAdapter', label: '显卡' },
+    { field: 'hostBusAdapter', label: '主机总线适配器' },
+    { field: 'biosUefi', label: 'BIOS/UEFI' },
+    { field: 'portsBusTypes', label: '端口/总线类型' },
+  ]);
   output += '\n';
 
-  // 认证信息
   output += "【认证信息】\n";
-  if (detail.certificationTime) {
-    output += `认证时间: ${detail.certificationTime}\n`;
-  }
-  if (detail.certificationAddr) {
-    output += `认证地址: ${detail.certificationAddr}\n`;
-  }
-  if (detail.commitID) {
-    output += `提交ID: ${detail.commitID}\n`;
-  }
+  output = addFields(output, detail, [
+    { field: 'certificationTime', label: '认证时间' },
+    { field: 'certificationAddr', label: '认证地址' },
+    { field: 'commitID', label: '提交ID' },
+  ]);
   output += '\n';
 
-  // 产品信息
   output += "【产品信息】\n";
-  if (detail.friendlyLink) {
-    output += `产品链接: ${detail.friendlyLink}\n`;
-  }
-  if (detail.productInformation) {
-    output += `产品信息: ${detail.productInformation}\n`;
-  }
+  output = addFields(output, detail, [
+    { field: 'friendlyLink', label: '产品链接' },
+    { field: 'productInformation', label: '产品信息' },
+  ]);
   output += '\n';
 
-  // 板卡信息
-  if (detail.boardCards && Array.isArray(detail.boardCards) && detail.boardCards.length > 0) {
+  if (detail.boardCards?.length > 0) {
     output += "【板卡信息】\n";
+    const cardFields = [
+      { field: 'chipVendor', label: '芯片厂商' },
+      { field: 'boardModel', label: '板卡型号' },
+      { field: 'chipModel', label: '芯片型号' },
+      { field: 'boardCardType', label: '板卡类型' },
+    ];
     detail.boardCards.forEach((card, index) => {
       output += `${index + 1}. ${card.boardCards || '未知板卡'}\n`;
-      if (card.chipVendor) output += `   芯片厂商: ${card.chipVendor}\n`;
-      if (card.boardModel) output += `   板卡型号: ${card.boardModel}\n`;
-      if (card.chipModel) output += `   芯片型号: ${card.chipModel}\n`;
-      if (card.boardCardType) output += `   板卡类型: ${card.boardCardType}\n`;
+      output = addIndentedFields(output, card, cardFields, 3);
     });
     output += '\n';
   }
@@ -321,7 +276,6 @@ function formatWholeDetail(data, basicInfo) {
   return output;
 }
 
-// 格式化板卡兼容性测试列表
 function formatBoardCompatibility(data, architecture, os, keyword, cardType) {
   if (!data || data.code !== 0 || !data.result) {
     return "暂无板卡兼容性测试信息。";
@@ -333,13 +287,7 @@ function formatBoardCompatibility(data, architecture, os, keyword, cardType) {
 
   let output = "=== openEuler 板卡兼容性测试列表 ===\n\n";
 
-  // 显示查询条件
-  const conditions = [];
-  if (architecture) conditions.push(`架构: ${architecture}`);
-  if (os) conditions.push(`操作系统: ${os}`);
-  if (keyword) conditions.push(`关键词: ${keyword}`);
-  if (cardType) conditions.push(`板卡类型: ${cardType}`);
-
+  const conditions = [architecture && `架构: ${architecture}`, os && `操作系统: ${os}`, keyword && `关键词: ${keyword}`, cardType && `板卡类型: ${cardType}`].filter(Boolean);
   if (conditions.length > 0) {
     output += `查询条件: ${conditions.join(', ')}\n`;
   }
@@ -351,49 +299,25 @@ function formatBoardCompatibility(data, architecture, os, keyword, cardType) {
     return output;
   }
 
+  const itemFields = [
+    { field: 'chipVendor', label: '芯片厂商' },
+    { field: 'boardModel', label: '板卡型号' },
+    { field: 'chipModel', label: '芯片型号' },
+    { field: 'boardCardType', label: '板卡类型' },
+    { field: 'architecture', label: '架构' },
+    { field: 'osVersion', label: '系统版本' },
+    { field: 'driverName', label: '驱动名称' },
+    { field: 'driverVersion', label: '驱动版本' },
+    { field: 'certificationTime', label: '认证时间' },
+    { field: 'certificationAddr', label: '认证地址' },
+    { field: 'testOrganization', label: '测试机构' },
+    { field: 'testResult', label: '测试结果' },
+    { field: 'friendlyLink', label: '产品链接' },
+  ];
+
   list.forEach((item, index) => {
     output += `${index + 1}. ${item.boardCards || '未知板卡'}\n`;
-
-    if (item.chipVendor) {
-      output += `   芯片厂商: ${item.chipVendor}\n`;
-    }
-
-    if (item.boardModel) {
-      output += `   板卡型号: ${item.boardModel}\n`;
-    }
-
-    if (item.chipModel) {
-      output += `   芯片型号: ${item.chipModel}\n`;
-    }
-
-    if (item.boardCardType) {
-      output += `   板卡类型: ${item.boardCardType}\n`;
-    }
-
-    if (item.architecture) {
-      output += `   架构: ${item.architecture}\n`;
-    }
-
-    if (item.osVersion) {
-      output += `   系统版本: ${item.osVersion}\n`;
-    }
-
-    if (item.driverName) {
-      output += `   驱动名称: ${item.driverName}\n`;
-    }
-
-    if (item.driverVersion) {
-      output += `   驱动版本: ${item.driverVersion}\n`;
-    }
-
-    if (item.downloadLink) {
-      output += `   下载链接: ${item.downloadLink}\n`;
-    }
-
-    if (item.certificationTime) {
-      output += `   认证时间: ${item.certificationTime}\n`;
-    }
-
+    output = addIndentedFields(output, item, itemFields, 3);
     output += '\n';
   });
 

@@ -1,8 +1,3 @@
-/**
- * @created 2026-03-03 by sig-OpenDesign with Claude AI
- * @description getCveInfo 工具函数单元测试
- */
-
 // 测试辅助：模拟 fetch
 function createMockFetch(responses) {
   let callCount = 0;

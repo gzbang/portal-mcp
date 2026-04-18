@@ -1,8 +1,4 @@
-/**
- * @created by sig-OpenDesign with Claude AI
- * @modified 2026-03-03 by sig-OpenDesign with Claude AI
- * @description CVE 安全公告查询工具，支持列表查询和 CVE 详情查询
- */
+import { appendRecommendation } from "../utils/toolRecommendations.js";
 
 // 数据源 URL
 const CVE_LIST_URL = "https://www.openeuler.openatom.cn/api-cve/cve-security-notice-server/cvedatabase/findAll";
@@ -104,6 +100,49 @@ function formatCveDetail(cveId, packageName, detail, products) {
     output += `\n**攻击向量 (OE):**\n${vectorLines.join("\n")}\n`;
   }
 
+  const vectorFieldsNVD = [
+    ["attackVectorNVD", "攻击向量"],
+    ["attackComplexityNVD", "攻击复杂度"],
+    ["privilegesRequiredNVD", "所需权限"],
+    ["userInteractionNVD", "用户交互"],
+    ["scopeNVD", "影响范围"],
+    ["confidentialityNVD", "机密性影响"],
+    ["integrityNVD", "完整性影响"],
+    ["availabilityNVD", "可用性影响"],
+  ];
+  const vectorLinesNVD = vectorFieldsNVD
+    .filter(([key]) => detail[key] && detail[key] !== "N/A")
+    .map(([key, label]) => `   - ${label}: ${detail[key]}`);
+  if (vectorLinesNVD.length > 0) {
+    output += `\n**攻击向量 (NVD):**\n${vectorLinesNVD.join("\n")}\n`;
+  }
+
+  if (detail.vectorStringOE && detail.vectorStringOE !== "N/A") {
+    output += `\n**向量字符串 (OE):** ${detail.vectorStringOE}\n`;
+  }
+  if (detail.vectorStringNVD && detail.vectorStringNVD !== "N/A") {
+    output += `\n**向量字符串 (NVD):** ${detail.vectorStringNVD}\n`;
+  }
+
+  if (detail.epssScore && detail.epssScore !== "N/A") {
+    output += `\n**EPSS 评分:** ${detail.epssScore}\n`;
+  }
+  if (detail.epssPercentile && detail.epssPercentile !== "N/A") {
+    output += `\n**EPSS 百分位:** ${detail.epssPercentile}\n`;
+  }
+
+  if (detail.cweId && detail.cweId !== "N/A") {
+    output += `\n**CWE ID:** ${detail.cweId}\n`;
+  }
+
+  if (detail.assigner && detail.assigner !== "N/A") {
+    output += `\n**分配者:** ${detail.assigner}\n`;
+  }
+
+  if (detail.reference && detail.reference !== "N/A") {
+    output += `\n**参考信息:** ${detail.reference}\n`;
+  }
+
   // 漏洞摘要
   if (detail.summary) {
     const summary = detail.summary.length > 500
@@ -120,6 +159,9 @@ function formatCveDetail(cveId, packageName, detail, products) {
       if (p.status) output += `（${p.status}）`;
       if (p.securityNoticeNo) output += ` / 公告: ${p.securityNoticeNo}`;
       if (p.releaseTime) output += ` / 修复时间: ${p.releaseTime}`;
+      if (p.packageName) output += ` / 软件包: ${p.packageName}`;
+      if (p.arch) output += ` / 架构: ${p.arch}`;
+      if (p.version) output += ` / 版本: ${p.version}`;
       output += "\n";
     });
     if (products.length > 20) {
@@ -145,7 +187,9 @@ export async function getCveInfo(queryType = "list", keyword = "", page = 1, pag
         return "请提供软件包名称（package_name），格式如：kernel、openssl";
       }
       const { detail, products } = await fetchCveDetail(cveId, packageName);
-      return formatCveDetail(cveId, packageName, detail, products);
+      let result = formatCveDetail(cveId, packageName, detail, products);
+      result = appendRecommendation(result, "get_cve_info", { cve_id: cveId, package_name: packageName, keyword });
+      return result;
     }
 
     // 默认 list 查询
@@ -219,6 +263,26 @@ export async function getCveInfo(queryType = "list", keyword = "", page = 1, pag
           sections.push(`  软件包: ${cve.packageName}`);
         }
 
+        if (cve.type) {
+          sections.push(`  漏洞类型: ${cve.type}`);
+        }
+
+        if (cve.cweId && cve.cweId !== "N/A") {
+          sections.push(`  CWE ID: ${cve.cweId}`);
+        }
+
+        if (cve.assigner && cve.assigner !== "N/A") {
+          sections.push(`  分配者: ${cve.assigner}`);
+        }
+
+        if (cve.vectorStringOE && cve.vectorStringOE !== "N/A") {
+          sections.push(`  向量字符串 (OE): ${cve.vectorStringOE}`);
+        }
+
+        if (cve.vectorStringNVD && cve.vectorStringNVD !== "N/A") {
+          sections.push(`  向量字符串 (NVD): ${cve.vectorStringNVD}`);
+        }
+
         if (cve.securityNoticeNo) {
           sections.push(`  安全公告编号: ${cve.securityNoticeNo}`);
         }
@@ -238,7 +302,9 @@ export async function getCveInfo(queryType = "list", keyword = "", page = 1, pag
       sections.push(`查询时间: ${new Date().toLocaleString("zh-CN")}`);
       sections.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
-      return sections.join("\n");
+      let result = sections.join("\n");
+      result = appendRecommendation(result, "get_cve_info", { keyword });
+      return result;
     } else {
       return `未找到与 "${keyword}" 相关的 CVE 安全公告。`;
     }

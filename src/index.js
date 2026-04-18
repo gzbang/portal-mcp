@@ -25,11 +25,16 @@ import { getOEEPInfo, toolDefinition as getOEEPInfoDef } from "./tools/getOEEPIn
 import { getSecurityNoticeInfo, toolDefinition as getSecurityNoticeInfoDef } from "./tools/getSecurityNoticeInfo.js";
 import { getBugNoticeInfo, toolDefinition as getBugNoticeInfoDef } from "./tools/getBugNoticeInfo.js";
 import { getSearchInfo, toolDefinition as getSearchInfoDef } from "./tools/getSearchInfo.js";
+import { executeUserOperation, toolDefinition as executeUserOperationDef } from "./tools/executeUserOperation.js";
+import { getForumInfo, toolDefinition as getForumInfoDef } from "./tools/getForumInfo.js";
+import { getDevelopmentInfo, toolDefinition as getDevelopmentInfoDef } from "./tools/getDevelopmentInfo.js";
+import { executeForumOperation, toolDefinition as executeForumOperationDef } from "./tools/executeForumOperation.js";
+import { getIssueInfo, toolDefinition as getIssueInfoDef } from "./tools/getIssueInfo.js";
+import { getPullRequestInfo, toolDefinition as getPullRequestInfoDef } from "./tools/getPullRequestInfo.js";
 
 // 工具映射
 const tools = [
   getSigInfoDef,
-  // getDocsInfoDef, // 暂未对外开放
   getOrganizationInfoDef,
   getCveInfoDef,
   getDownloadInfoDef,
@@ -43,11 +48,16 @@ const tools = [
   getSecurityNoticeInfoDef,
   getBugNoticeInfoDef,
   getSearchInfoDef,
+  executeUserOperationDef,
+  getForumInfoDef,
+  getDevelopmentInfoDef,
+  executeForumOperationDef,
+  getIssueInfoDef,
+  getPullRequestInfoDef,
 ];
 
 const toolHandlers = {
   get_sig_info: getSigInfo,
-  // get_docs_info: getDocsInfo, // 暂未对外开放
   get_organization_info: getOrganizationInfo,
   get_cve_info: getCveInfo,
   get_download_info: getDownloadInfo,
@@ -61,6 +71,12 @@ const toolHandlers = {
   get_security_notice_info: getSecurityNoticeInfo,
   get_bug_notice_info: getBugNoticeInfo,
   get_search_info: getSearchInfo,
+  execute_user_operation: executeUserOperation,
+  get_forum_info: getForumInfo,
+  get_development_info: getDevelopmentInfo,
+  execute_forum_operation: executeForumOperation,
+  get_issue_info: getIssueInfo,
+  get_pull_request_info: getPullRequestInfo,
 };
 
 // 创建服务器实例的工厂函数
@@ -104,7 +120,7 @@ function createServer() {
       // 调用对应的工具处理函数
       let result;
       if (name === "get_sig_info") {
-        result = await handler(args.sig_name || "", args.query_type || "sig", args.contribute_type || "pr");
+        result = await handler(args.sig_name || "", args.query_type || "sig", args.contribute_type || "pr", args.time_range || "all");
       } else if (name === "get_organization_info") {
         result = await handler(args.query || "");
       } else if (name === "get_cve_info") {
@@ -131,6 +147,61 @@ function createServer() {
         result = await handler(args.query_type || "list", args.keyword || "", args.security_notice_no || "");
       } else if (name === "get_search_info") {
         result = await handler(args.keyword || "", args.lang || "zh");
+      } else if (name === "execute_user_operation") {
+        result = await handler(args.operation_type || "check_cla", {
+          month: args.month || "",
+          meeting_id: args.meeting_id || 0,
+          sub_id: args.sub_id || "",
+          topic: args.topic || "",
+          group_name: args.group_name || "",
+          platform: args.platform || "",
+          date: args.date || "",
+          start: args.start || "",
+          end: args.end || "",
+          agenda: args.agenda || "",
+          is_record: args.is_record || false,
+          is_private: args.is_private || false,
+          is_cycle: args.is_cycle || false,
+          cycle_interval: args.cycle_interval || 0,
+          cycle_type: args.cycle_type || 0,
+          cycle_start_date: args.cycle_start_date || "",
+          cycle_end_date: args.cycle_end_date || "",
+          cycle_start: args.cycle_start || "",
+          cycle_end: args.cycle_end || "",
+          cycle_point: args.cycle_point || "",
+        });
+} else if (name === "get_forum_info") {
+        result = await handler(args.query_type || "latest", args.keyword || "", args.topic_id || "");
+} else if (name === "get_development_info") {
+        result = await handler(
+          args.gitcode_id || "",
+          args.query_type || "events",
+          args.pr_scope || "",
+          args.owner || "",
+          args.repo || "",
+          args.number || 0,
+          args.comment_body || "",
+          args.comment_path || "",
+          args.comment_position || 0
+        );
+} else if (name === "execute_forum_operation") {
+        result = await handler(args.operation_type || "validate_token", args.topic_id || "", args.raw || "");
+} else if (name === "get_issue_info") {
+        result = await handler({
+          page: args.page || 1,
+          state: args.state || "",
+          author: args.author || "",
+          repo: args.repo || "",
+          search: args.search || "",
+        });
+      } else if (name === "get_pull_request_info") {
+        result = await handler({
+          page: args.page || 1,
+          state: args.state || "",
+          author: args.author || "",
+          repo: args.repo || "",
+          search: args.search || "",
+        });
       }
 
       return {

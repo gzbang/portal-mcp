@@ -1,8 +1,3 @@
-/**
- * @created 2026-03-02 by sig-OpenDesign with Claude AI
- * @description getOEEPInfo 工具函数单元测试
- */
-
 // ─── 模拟数据 ────────────────────────────────────────────────
 const MOCK_INDEX_MARKDOWN = `---
 标题:     oEEP (openEuler 演进提案 Evolution Proposal) 索引

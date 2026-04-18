@@ -76,7 +76,6 @@ function parseBugIds(cveId) {
   return cveId.replace(/;+$/, "").split(";").map(s => s.trim()).filter(Boolean);
 }
 
-// 格式化单条公告列表项
 function formatNoticeItem(notice, index) {
   const severity = SEVERITY_LABELS[notice.type] || notice.type || "未知";
   const bugIds = parseBugIds(notice.cveId);
@@ -93,11 +92,15 @@ function formatNoticeItem(notice, index) {
     output += `   缺陷 ID: ${showIds}${more}\n`;
   }
 
+  if (notice.type) output += `   类型码: ${notice.type}\n`;
+  if (notice.creator) output += `   创建者: ${notice.creator}\n`;
+  if (notice.status) output += `   状态: ${notice.status}\n`;
+  if (notice.updateTime) output += `   更新时间: ${notice.updateTime}\n`;
+  
   output += `   发布时间: ${notice.announcementTime || "未知"}\n`;
   return output;
 }
 
-// 格式化公告详情
 function formatNoticeDetail(notice) {
   const severity = SEVERITY_LABELS[notice.type] || notice.type || "未知";
   const bugIds = parseBugIds(notice.cveId);
@@ -106,10 +109,17 @@ function formatNoticeDetail(notice) {
   output += `**公告编号:** ${notice.securityNoticeNo}\n`;
   output += `**摘要:** ${notice.summary || "暂无"}\n`;
   output += `**严重等级:** ${severity}\n`;
+  if (notice.type) output += `**类型码:** ${notice.type}\n`;
+  if (notice.creator) output += `**创建者:** ${notice.creator}\n`;
+  if (notice.status) output += `**状态:** ${notice.status}\n`;
   output += `**受影响组件:** ${notice.affectedComponent || "未知"}\n`;
   output += `**受影响版本:** ${notice.affectedProduct || "未知"}\n`;
   output += `**发布时间:** ${notice.announcementTime || "未知"}\n`;
   output += `**更新时间:** ${notice.updateTime || "未知"}\n`;
+
+  if (notice.typeName) output += `**类型名称:** ${notice.typeName}\n`;
+  if (notice.issueId) output += `**Issue ID:** ${notice.issueId}\n`;
+  if (notice.publishTime) output += `**实际发布时间:** ${notice.publishTime}\n`;
 
   if (bugIds.length > 0) {
     output += `\n**关联缺陷（${bugIds.length} 个）:**\n`;
@@ -127,6 +137,8 @@ function formatNoticeDetail(notice) {
     output += `\n**参考链接（${notice.referenceList.length} 个）:**\n`;
     notice.referenceList.slice(0, 10).forEach(ref => {
       output += `   - ${ref.url}\n`;
+      if (ref.title) output += `     标题: ${ref.title}\n`;
+      if (ref.source) output += `     来源: ${ref.source}\n`;
     });
     if (notice.referenceList.length > 10) {
       output += `   ... 共 ${notice.referenceList.length} 个链接\n`;
@@ -137,6 +149,9 @@ function formatNoticeDetail(notice) {
     output += `\n**修复软件包（${notice.packageList.length} 个）:**\n`;
     notice.packageList.slice(0, 10).forEach(pkg => {
       output += `   - ${pkg.packageName || pkg.name || String(pkg)}\n`;
+      if (pkg.version) output += `     版本: ${pkg.version}\n`;
+      if (pkg.arch) output += `     架构: ${pkg.arch}\n`;
+      if (pkg.release) output += `     发布: ${pkg.release}\n`;
     });
     if (notice.packageList.length > 10) {
       output += `   ... 共 ${notice.packageList.length} 个软件包\n`;

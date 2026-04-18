@@ -1,8 +1,3 @@
-/**
- * @created 2026-03-03 by sig-OpenDesign with Claude AI
- * @description openEuler 门户全站搜索工具，作为其他查询工具的兜底查询
- */
-
 // 数据源 URL
 const SEARCH_URL = "https://www.openeuler.openatom.cn/api-search/search/docsng";
 const PORTAL_BASE_URL = "https://www.openeuler.openatom.cn";
@@ -160,30 +155,42 @@ export async function getSearchInfo(keyword = "", lang = "zh") {
 // 工具定义
 export const toolDefinition = {
   name: "get_search_info",
-  description: `搜索 openEuler 门户网站全站内容，作为其他专项工具都不适用或未查到结果时的兜底查询。
+  description: `搜索 openEuler 门户网站全站内容（博客、Issue、代码仓库、会议文档、SIG 页面等）。
 
-本工具通过 openEuler 门户全站搜索引擎，覆盖博客、Issue、代码仓库、SIG 组页面、会议文档等多种类型内容。
+**⚠️ 重要提示：**
+这是 openEuler 相关问题的**兜底搜索工具**。只要用户问题涉及 openEuler，且其他专项工具（CVE、SIG、安全公告等）不适用或未找到结果，就应该使用本工具进行全站搜索。
 
-**适合使用本工具的场景：**
-- 其他专项工具（CVE 查询、SIG 查询、文档搜索等）均未找到相关结果时
-- 问题涉及多个领域，不确定用哪个专项工具时
-- 搜索 openEuler 博客文章、新闻资讯
-- 搜索社区 Issue、代码提交记录
-- 搜索 SIG 组相关内容
-- 搜索会议记录（etherpad 文档）
-- 泛化问题：如"openEuler 有哪些关于 XXX 的内容？"
+**为什么这是必选工具？**
+- 覆盖范围最广：博客文章、技术分享、Issue 讨论、代码仓库、会议记录、SIG 组页面
+- 场景最全面：迁移经验、故障排查案例、技术讨论、项目动态、社区活动
+- 信息最鲜活：包含社区用户分享的实战经验、问题讨论、最佳实践
 
-**不推荐使用本工具的场景（请优先使用专项工具）：**
-- 查询 CVE 漏洞 → 使用 get_cve_info
-- 查询 SIG 详细信息 → 使用 get_sig_info
-- 查询安全/缺陷公告 → 使用 get_security_notice_info / get_bug_notice_info
-- 搜索技术文档（含版本）→ 使用 get_docs_search_content
-- 查询软件包 → 使用 get_package_info
+**适用场景（只要涉及 openEuler 就能用）：**
+- 迁移场景：CentOS 迁移经验分享、x2openEuler 使用讨论、迁移遇到的问题案例
+- 故障排查：安装失败案例、配置错误讨论、运行异常问题、报错解决方案分享
+- 技术讨论：性能优化经验、安全加固实践、网络配置技巧、存储管理心得
+- 项目动态：开源项目更新、新特性发布、工具改进、版本变化
+- 社区活动：会议讨论、技术分享会、用户案例、SIG 组动态
+- 经验分享：最佳实践、踩坑经历、解决方案、配置技巧
+- 问题求助：社区 Issue 讨论、技术问答、疑难问题求助帖
+
+**关键词示例（建议参考）：**
+- 迁移类：CentOS 迁移、x2openEuler、升级迁移、迁移经验、迁移问题
+- 故障类：安装失败、启动异常、配置报错、运行错误、故障案例
+- 工具类：x2openEuler 问题、迁移工具使用、工具报错、工具安装失败
+- 配置类：网络配置、防火墙设置、存储配置、SELinux 问题
+- 性能类：性能优化、性能问题、调优经验、性能测试
+- 项目类：项目名称、工具名称、开源项目、社区项目
+- 场景类：内网部署、离线安装、特殊环境、实战案例
+
+**不推荐使用本工具的场景（优先使用专项工具）：**
+- 查询 CVE 漏洞详情 → 使用 get_cve_info
+- 查询 SIG 详细信息（维护者、仓库） → 使用 get_sig_info
+- 查询安全公告详情 → 使用 get_security_notice_info
+- 查询缺陷公告详情 → 使用 get_bug_notice_info
+- 搜索技术文档（含版本） → 使用 get_docs_search_content
+- 查询软件包详情 → 使用 get_package_info
 - 查询下载镜像 → 使用 get_download_info
-
-**参数说明：**
-- keyword: 搜索关键词（必填），支持中英文，可以是单个词或短语
-- lang: 搜索语言，根据用户提问语言选择；"zh"（中文，默认）或 "en"（英文）
 
 **返回信息：**
 - 搜索结果列表（最多 12 条）
@@ -191,24 +198,33 @@ export const toolDefinition = {
 - 标题、内容摘要（最多 120 字符）、日期、标签、作者
 - 结果访问链接
 
-**示例问题：**
-- "openEuler 社区有关于容器的博客吗？"
+**参数说明：**
+- keyword: 搜索关键词（必填），支持中英文，可包含工具名、技术术语、问题描述等
+- lang: 搜索语言，根据用户提问语言选择；zh（中文，默认）或 en（英文）
+
+**示例问题（强烈建议参考）：**
+- "有人遇到过 x2openEuler 安装失败的问题吗？"
+- "CentOS 迁移到 openEuler 的经验分享"
+- "内网环境部署 openEuler 的案例"
+- "openEuler 安装后无法启动的解决方案"
+- "有人分享过防火墙配置的最佳实践吗？"
+- "Docker 在 openEuler 上运行遇到问题怎么办？"
+- "openEuler 性能调优的经验分享"
+- "社区有关于 eBPF 的讨论吗？"
 - "openEuler 和 RISC-V 相关的内容有哪些？"
-- "搜索 openEuler 门户中关于 DPU 的内容"
-- "有没有关于 openEuler 虚拟化的文章？"
-- "What content does openEuler have about containers?"`,
+- "查找 openEuler 在金融行业的应用案例"`,
   inputSchema: {
     type: "object",
     required: ["keyword"],
     properties: {
       keyword: {
         type: "string",
-        description: "搜索关键词（必填），支持中英文。可以是技术词汇、项目名称、功能描述等，例如：'容器'、'DPU'、'RISC-V'、'virtualization'。",
+        description: "搜索关键词（必填）。可以是工具名称（如 'x2openEuler'）、技术术语（如 'eBPF'）、问题描述（如 '安装失败'）、经验分享（如 '迁移经验'）、项目名称等。支持中英文。",
       },
       lang: {
         type: "string",
         enum: ["zh", "en"],
-        description: "搜索语言：'zh'（中文，默认）或 'en'（英文）。根据用户提问所用语言自动选择。",
+        description: "搜索语言：zh（中文，默认）或 en（英文）。根据用户提问所用语言自动选择。",
         default: "zh",
       },
     },

@@ -1,3 +1,6 @@
+import { appendRecommendation } from "../utils/toolRecommendations.js";
+import { addField, addFields, addIndentedField, truncate, stripHtml, formatBoolean, formatArray } from "../utils/formatHelpers.js";
+
 // 数据源 URL
 const BASE_URL = "https://easysoftware.openeuler.openatom.cn/server/field";
 
@@ -147,7 +150,9 @@ export async function getPackageInfo(query, queryType = "auto") {
 
       // 查询详情
       const detailData = await fetchPackageDetail(matchedPackage.pkgIds);
-      return formatPackageDetail(detailData, matchedPackage);
+      let result = formatPackageDetail(detailData, matchedPackage);
+      result = appendRecommendation(result, "get_package_info", { keyword: query });
+      return result;
     }
 
     // 4. 自动查询模式（默认）
@@ -221,15 +226,15 @@ function formatLifecycleInfo(data) {
   if (Array.isArray(data.data)) {
     data.data.forEach((version, index) => {
       result += `${index + 1}. ${version.name || version.version || '未知版本'}\n`;
-      if (version.releaseDate) {
-        result += `   发布日期: ${version.releaseDate}\n`;
+      result = addIndentedField(result, version, 'releaseDate', '发布日期');
+      result = addIndentedField(result, version, 'eolDate', 'EOL 日期');
+      result = addIndentedField(result, version, 'status', '状态');
+      if (version.lts !== undefined) {
+        result = addIndentedField(result, { lts: formatBoolean(version.lts) }, 'lts', 'LTS');
       }
-      if (version.eolDate) {
-        result += `   EOL 日期: ${version.eolDate}\n`;
-      }
-      if (version.status) {
-        result += `   状态: ${version.status}\n`;
-      }
+      result = addIndentedField(result, version, 'arch', '支持架构', 3, formatArray);
+      result = addIndentedField(result, version, 'description', '描述', 3, v => truncate(stripHtml(v), 100));
+      result = addIndentedField(result, version, 'maintainer', '维护者');
       result += '\n';
     });
   } else {
@@ -245,8 +250,6 @@ function formatPackageList(data, query) {
     return "暂无软件包信息。";
   }
 
-  // API 返回的数据结构是 data: [{ children: [...] }]
-  // 需要展开所有 children 数组
   let allPackages = [];
   if (Array.isArray(data.data)) {
     data.data.forEach(group => {
@@ -260,7 +263,6 @@ function formatPackageList(data, query) {
     return `未找到与 "${query}" 相关的软件包。`;
   }
 
-  // 如果有 keyword，进行客户端过滤
   if (query && query.trim() !== "") {
     const keyword = query.toLowerCase();
     allPackages = allPackages.filter(pkg =>
@@ -273,7 +275,6 @@ function formatPackageList(data, query) {
     return `未找到与 "${query}" 相关的软件包。`;
   }
 
-  // 限制显示数量为 10 个
   const displayPackages = allPackages.slice(0, 10);
 
   let result = `=== 软件包列表 ${query ? `(搜索: "${query}")` : ''} ===\n\n`;
@@ -281,44 +282,33 @@ function formatPackageList(data, query) {
 
   displayPackages.forEach((pkg, index) => {
     result += `${index + 1}. ${pkg.name || '未知软件包'}\n`;
-
-    if (pkg.description) {
-      // 限制描述长度
-      const desc = pkg.description.length > 100
-        ? pkg.description.substring(0, 100) + '...'
-        : pkg.description;
-      result += `   描述: ${desc}\n`;
-    }
-
-    if (pkg.version) {
-      result += `   版本: ${pkg.version}\n`;
-    }
-
-    if (pkg.os) {
-      result += `   系统: ${pkg.os}\n`;
-    }
-
-    if (pkg.arch) {
-      result += `   架构: ${pkg.arch}\n`;
-    }
-
-    if (pkg.category) {
-      result += `   分类: ${pkg.category}\n`;
-    }
-
+    result = addIndentedField(result, pkg, 'description', '描述', 3, v => truncate(stripHtml(v), 100));
+    result = addIndentedField(result, pkg, 'version', '版本');
+    result = addIndentedField(result, pkg, 'os', '系统');
+    result = addIndentedField(result, pkg, 'arch', '架构');
+    result = addIndentedField(result, pkg, 'category', '分类');
+    result = addIndentedField(result, pkg, 'license', '许可证');
+    result = addIndentedField(result, pkg, 'vendor', '供应商');
+    
     if (pkg.maintainers) {
       const maintainerList = Object.values(pkg.maintainers).filter(m => m);
       if (maintainerList.length > 0) {
         result += `   维护者: ${maintainerList.join(', ')}\n`;
       }
     }
-
-    // 显示可用的包类型
+    
+    result = addIndentedField(result, pkg, 'url', '主页');
+    result = addIndentedField(result, pkg, 'downloadUrl', '下载地址');
+    
     if (pkg.pkgIds) {
       const types = Object.keys(pkg.pkgIds).filter(key => pkg.pkgIds[key]);
       if (types.length > 0) {
         result += `   可用类型: ${types.join(', ')}\n`;
       }
+    }
+    
+    if (pkg.installation) {
+      result += `   安装命令: ${truncate(pkg.installation, 50)}\n`;
     }
 
     result += '\n';
@@ -338,116 +328,101 @@ function formatPackageDetail(data, packageInfo) {
 
   const detail = data.data;
 
-  // 基本信息
   result += "【基本信息】\n";
-  if (packageInfo.name) result += `名称: ${packageInfo.name}\n`;
-  if (packageInfo.version) result += `版本: ${packageInfo.version}\n`;
-  if (packageInfo.description) result += `描述: ${packageInfo.description}\n`;
-  if (packageInfo.category) result += `分类: ${packageInfo.category}\n`;
-  if (packageInfo.os) result += `系统: ${packageInfo.os}\n`;
-  if (packageInfo.arch) result += `架构: ${packageInfo.arch}\n`;
+  result = addField(result, packageInfo, 'name', '名称');
+  result = addField(result, packageInfo, 'version', '版本');
+  result = addField(result, packageInfo, 'description', '描述', truncate);
+  result = addField(result, packageInfo, 'category', '分类');
+  result = addField(result, packageInfo, 'os', '系统');
+  result = addField(result, packageInfo, 'arch', '架构');
   result += '\n';
 
-  // 遍历所有类型的包信息（RPM、OEPKG、IMAGE）
   const packageTypes = ['RPM', 'OEPKG', 'IMAGE'];
+  const pkgFields = [
+    { field: 'name', label: '包名' },
+    { field: 'appVer', label: '应用版本' },
+    { field: 'version', label: '版本' },
+    { field: 'release', label: '发布' },
+    { field: 'arch', label: '架构' },
+    { field: 'summary', label: '摘要' },
+    { field: 'description', label: '描述' },
+    { field: 'license', label: '许可证' },
+    { field: 'url', label: '主页' },
+    { field: 'security', label: '安全分级' },
+    { field: 'maintainerGiteeId', label: '维护者 Gitee ID' },
+    { field: 'maintainerEmail', label: '维护者邮箱' },
+    { field: 'maintainerAtomgitId', label: '维护者 AtomGit ID' },
+    { field: 'vendor', label: '供应商' },
+    { field: 'buildHost', label: '构建主机' },
+    { field: 'sourceRpm', label: '源 RPM' },
+    { field: 'group', label: '软件包组' },
+    { field: 'category', label: '分类' },
+    { field: 'size', label: '大小' },
+    { field: 'installTime', label: '安装时间' },
+    { field: 'buildTime', label: '构建时间' },
+  ];
 
   packageTypes.forEach(type => {
-    if (detail[type]) {
-      const pkg = detail[type];
-      result += `【${type} 包信息】\n`;
+    const pkg = detail[type];
+    if (!pkg) return;
 
-      // 基本信息
-      if (pkg.name) result += `包名: ${pkg.name}\n`;
-      if (pkg.appVer) result += `应用版本: ${pkg.appVer}\n`;
-      if (pkg.version) result += `版本: ${pkg.version}\n`;
-      if (pkg.release) result += `发布: ${pkg.release}\n`;
-      if (pkg.arch) result += `架构: ${pkg.arch}\n`;
-      if (pkg.summary) result += `摘要: ${pkg.summary}\n`;
-      if (pkg.description) result += `描述: ${pkg.description}\n`;
-      if (pkg.license) result += `许可证: ${pkg.license}\n`;
-      if (pkg.url) result += `主页: ${pkg.url}\n`;
+    result += `【${type} 包信息】\n`;
+    result = addFields(result, pkg, pkgFields);
+    result += '\n';
 
-      // 安全分级
-      if (pkg.security) {
-        result += `安全分级: ${pkg.security}\n`;
+    const sections = [
+      { field: 'installation', title: '安装指引' },
+      { field: 'download', title: '下载说明' },
+      { field: 'environment', title: '环境要求' },
+    ];
+
+    sections.forEach(({ field, title }) => {
+      if (pkg[field]) {
+        result += `【${title}】\n${pkg[field]}\n\n`;
       }
+    });
 
-      // 维护者信息
-      if (pkg.maintainerGiteeId) result += `维护者 Gitee ID: ${pkg.maintainerGiteeId}\n`;
-      if (pkg.maintainerEmail) result += `维护者邮箱: ${pkg.maintainerEmail}\n`;
+    if (type === 'IMAGE' && pkg.imageTags) {
+      result += `【镜像标签】\n${pkg.imageTags}\n\n`;
+    }
 
-      // 分类
-      if (pkg.category) result += `分类: ${pkg.category}\n`;
+    const arrayFields = [
+      { field: 'dependencyPkgs', title: '依赖包' },
+      { field: 'similarPkgs', title: '相似软件包' },
+      { field: 'fileList', title: '文件列表', limit: 10 },
+    ];
 
-      result += '\n';
+    arrayFields.forEach(({ field, title, limit }) => {
+      if (!pkg[field]) return;
+      
+      try {
+        const items = typeof pkg[field] === 'string' ? JSON.parse(pkg[field]) : pkg[field];
+        if (!Array.isArray(items) || items.length === 0) return;
 
-      // 安装指引
-      if (pkg.installation) {
-        result += "【安装指引】\n";
-        result += pkg.installation + '\n\n';
-      }
-
-      // 下载说明
-      if (pkg.download) {
-        result += "【下载说明】\n";
-        result += pkg.download + '\n\n';
-      }
-
-      // 环境要求
-      if (pkg.environment) {
-        result += "【环境要求】\n";
-        result += pkg.environment + '\n\n';
-      }
-
-      // 镜像标签（仅 IMAGE 类型）
-      if (type === 'IMAGE' && pkg.imageTags) {
-        result += "【镜像标签】\n";
-        result += pkg.imageTags + '\n\n';
-      }
-
-      // 依赖包
-      if (pkg.dependencyPkgs) {
-        try {
-          const deps = typeof pkg.dependencyPkgs === 'string'
-            ? JSON.parse(pkg.dependencyPkgs)
-            : pkg.dependencyPkgs;
-          if (Array.isArray(deps) && deps.length > 0) {
-            result += "【依赖包】\n";
-            deps.forEach(dep => {
-              result += `  • ${dep}\n`;
+        result += `【${title}】${limit ? '（显示前 10 个）' : ''}\n`;
+        items.slice(0, limit || items.length).forEach(item => {
+          if (typeof item === 'object') {
+            Object.entries(item).forEach(([name, desc]) => {
+              result += `  • ${name}: ${desc}\n`;
             });
-            result += '\n';
+          } else {
+            result += `  • ${item}\n`;
           }
-        } catch (e) {
-          // 解析失败，跳过
+        });
+        if (limit && items.length > limit) {
+          result += `  ... 共 ${items.length} 个\n`;
         }
+        result += '\n';
+      } catch {
+        // 解析失败，跳过
       }
+    });
 
-      // 相似软件包
-      if (pkg.similarPkgs) {
-        try {
-          const similar = typeof pkg.similarPkgs === 'string'
-            ? JSON.parse(pkg.similarPkgs)
-            : pkg.similarPkgs;
-          if (Array.isArray(similar) && similar.length > 0) {
-            result += "【相似软件包】\n";
-            similar.forEach(item => {
-              if (typeof item === 'object') {
-                Object.entries(item).forEach(([name, desc]) => {
-                  result += `  • ${name}: ${desc}\n`;
-                });
-              }
-            });
-            result += '\n';
-          }
-        } catch (e) {
-          // 解析失败，跳过
-        }
-      }
+    if (pkg.changelog) {
+      result += `【变更日志】\n${truncate(pkg.changelog, 300)}\n\n`;
     }
   });
 
-  // 如果没有找到任何包信息
   if (!detail.RPM && !detail.OEPKG && !detail.IMAGE) {
     result += "暂无详细的包信息。\n";
   }

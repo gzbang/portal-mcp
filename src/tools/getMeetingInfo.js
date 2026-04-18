@@ -132,23 +132,74 @@ function formatMeeting(meeting, index) {
     output += `   时间: ${start || '?'} - ${end || '?'}\n`;
   }
 
-  if (meeting.agenda) {
-    const agendaText = meeting.agenda.length > 100
-      ? meeting.agenda.substring(0, 100) + '...'
-      : meeting.agenda;
+  if (meeting.platform) {
+    output += `   会议平台: ${meeting.platform}\n`;
+  }
+
+  if (meeting.agenda || meeting.summary) {
+    const agendaText = (meeting.agenda || meeting.summary || '').length > 100
+      ? (meeting.agenda || meeting.summary).substring(0, 100) + '...'
+      : (meeting.agenda || meeting.summary);
     output += `   议程: ${agendaText}\n`;
+  }
+
+  if (meeting.sponsor) {
+    output += `   发起人: ${meeting.sponsor}\n`;
+  }
+
+  if (meeting.email_list) {
+    output += `   邮件列表: ${meeting.email_list}\n`;
+  }
+
+  if (meeting.participants) {
+    output += `   参会人数: ${meeting.participants}\n`;
+  }
+
+  if (meeting.status) {
+    output += `   状态: ${meeting.status}\n`;
   }
 
   if (meeting.etherpad) {
     output += `   协作文档: ${meeting.etherpad}\n`;
   }
 
-  if (meeting.url || meeting.meeting_url) {
-    output += `   会议链接: ${meeting.url || meeting.meeting_url}\n`;
+  if (meeting.url || meeting.meeting_url || meeting.join_url) {
+    output += `   会议链接: ${meeting.url || meeting.meeting_url || meeting.join_url}\n`;
   }
 
-  if (meeting.video_url) {
+  // 处理视频回放链接 - 支持 obs_data 和 bili_data
+  const hasObsVideo = meeting.obs_data && meeting.obs_data.length > 0 && meeting.obs_data[0].text_video_url;
+  const hasBiliVideo = meeting.bili_data && meeting.bili_data.length > 0 && meeting.bili_data[0].replay_url;
+  const hasLegacyVideo = meeting.video_url;
+
+  if (hasBiliVideo) {
+    output += `   📺 B站回放: ${meeting.bili_data[0].replay_url}\n`;
+  }
+  if (hasObsVideo) {
+    output += `   🎥 视频回放: ${meeting.obs_data[0].text_video_url}\n`;
+  }
+  if (hasLegacyVideo) {
     output += `   视频回放: ${meeting.video_url}\n`;
+  }
+
+  // 处理字幕和会议内容引导
+  const hasVtt = meeting.obs_data && meeting.obs_data.length > 0 && meeting.obs_data[0].text_vtt_url;
+  const hasObsData = meeting.obs_data && meeting.obs_data.length > 0 && meeting.obs_data[0].status === 10;
+
+  if (hasVtt) {
+    output += `   📝 字幕文件: ${meeting.obs_data[0].text_vtt_url}\n`;
+  }
+
+  if (hasObsData) {
+    output += `   💡 提示: 该会议有完整录像，可自动生成会议总结。\n`;
+  }
+
+  if (meeting.mid || meeting.id) {
+    output += `   会议 ID: ${meeting.mid || meeting.id}\n`;
+  }
+
+  if (meeting.created_at) {
+    output += `   创建时间: ${meeting.created_at}\n`;
   }
 
   return output;
@@ -290,6 +341,7 @@ export const toolDefinition = {
 - 查询某个 SIG 组的会议记录
 - 了解会议议题、时间、参与方式
 - 查找会议的协作文档和视频回放
+- 获取会议字幕文件（VTT格式）用于自动生成会议总结
 - 当某天没有会议时，自动推荐附近有会议的日期
 
 **查询模式：**
@@ -302,7 +354,7 @@ export const toolDefinition = {
 2. 按 SIG 查询：query_type = "sig"
    - 查询指定 SIG 组的所有会议记录
    - 支持大小写模糊匹配（自动匹配正确的 SIG 名称）
-   - SIG 名称示例：Kernel、ai、Compiler、Networking
+   - SIG 名称示例：Kernel、ai、Compiler、Networking、release-management
 
 **参数说明：**
 - query_type: 查询类型，"date"（按日期）或 "sig"（按SIG），默认 "date"
@@ -313,6 +365,8 @@ export const toolDefinition = {
 - 智能 SIG 匹配：自动将用户输入的 SIG 名称匹配为正确大小写的官方名称
 - 无会议推荐：当查询日期没有会议时，自动推荐附近有会议的日期
 - 15分钟缓存：SIG 列表数据缓存，减少 API 调用
+- 视频回放支持：自动提取 B站回放和 OBS 视频链接
+- 字幕文件提示：当会议有 VTT 字幕时，提示用户可下载字幕生成会议总结
 
 **返回信息：**
 - 会议议题（topic）
@@ -321,14 +375,24 @@ export const toolDefinition = {
 - 会议议程摘要
 - 协作文档链接（etherpad）
 - 会议参会链接
-- 视频回放链接
+- 视频回放链接（B站 + OBS）
+- 字幕文件链接（VTT格式）
+- 会议总结提示（如有字幕）
+
+**重要提示：会议总结功能**
+当返回结果包含 "💡 提示: 该会议有完整录像和字幕" 时：
+- 字幕文件（text_vtt_url）包含会议的完整文字记录
+- Agent 可以下载该 VTT 文件并自动生成会议内容总结
+- 使用方法：使用 web 工具下载 VTT URL，解析内容后生成结构化的会议总结
 
 **示例问题：**
 - "2026年3月3日有哪些 openEuler 社区会议？"
 - "Kernel SIG 最近有什么会议安排？"
 - "明天的 openEuler 社区会议有哪些？"
 - "查看 ai SIG 的会议记录"
-- "openEuler 今天有开放会议吗？"`,
+- "openEuler 今天有开放会议吗？"
+- "release-management SIG 4月3日的会议有回放吗？"
+- "帮我总结一下 release-management SIG 4月3日会议的内容"`,
   inputSchema: {
     type: "object",
     properties: {

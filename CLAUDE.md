@@ -203,6 +203,40 @@ result += `   版本: ...\n\n`;
 return result;
 ```
 
+## 🔄 平台命名约定
+
+### GitCode 与 AtomGit 等价关系
+在 openEuler 生态系统中，**GitCode** 和 **AtomGit** 是同一个代码托管平台的不同名称：
+
+| 名称 | 说明 | 使用场景 |
+|------|------|----------|
+| **GitCode** | 外部用户可见的平台名称 | 工具名称（如 `getDevelopmentInfo`）、用户文档 |
+| **AtomGit** | API 返回数据中的字段名称 | API 响应字段（如 `atomgit_id`）、内部数据处理 |
+
+### 重要约定
+- **`atomgit_id` 就是 `gitcode_id`**：两者指向同一个用户标识
+- **工具命名使用 GitCode**：面向用户的工具应使用 `getDevelopmentInfo`（获取 GitCode 开发信息）
+- **API 字段处理保留 AtomGit**：从 API 返回的 `atomgit_id`、`atomgit_account` 等字段应保留原名称，但在输出时可标注为 "GitCode ID"
+- **输出格式说明**：在用户输出中，可以使用 "GitCode ID" 或 "AtomGit ID" 任一名称，但建议优先使用用户熟悉的 "GitCode ID"
+
+### 示例
+```javascript
+// API 返回字段
+{ atomgit_id: "user123", gitee_id: "user456" }
+
+// 输出格式（两种方式均可）
+// 方式 1：保留原名称
+out += `AtomGit ID: ${item.atomgit_id}\n`;
+
+// 方式 2：使用用户友好名称
+out += `GitCode ID: ${item.atomgit_id}\n`;
+```
+
+### 相关工具
+- `getDevelopmentInfo`：查询 GitCode 用户开发信息（内部调用 AtomGit API）
+- `getSigInfo`：返回的 maintainer/contributor 信息中可能包含 `atomgit_id` 字段
+- 其他涉及用户身份的工具：如需展示 GitCode 身份，使用 `atomgit_id` 字段值
+
 ## 🔒 Security Rules
 
 ### Input Validation
